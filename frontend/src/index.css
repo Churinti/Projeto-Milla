@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-space: #07080f;
+    --card-bg: rgba(13, 17, 30, 0.65);
+    --border-glass: rgba(0, 255, 200, 0.15);
+    
+    /* Cores Cognitivas */
+    --color-logic: #00f0ff;
+    --color-emotion: #ff007f;
+    --color-abstraction: #b000ff;
+    --color-time: #ffaa00;
+    --color-consciousness: #00ffaa;
+  }
+
+  body {
+    background-color: var(--bg-space);
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(16, 20, 48, 0.8) 0, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(26, 15, 46, 0.8) 0, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(10, 35, 30, 0.8) 0, transparent 50%);
+    background-attachment: fixed;
+    color: #e2e8f0;
+    font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+    overflow-x: hidden;
+    margin: 0;
+  }
+}
+
+/* Glassmorphism Efeitos */
+.glass-panel {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+.glass-panel-glow {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 255, 200, 0.3);
+  box-shadow: 
+    0 8px 32px 0 rgba(0, 0, 0, 0.4),
+    0 0 15px rgba(0, 255, 200, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Brilhos de Neon */
+.text-neon-cyan {
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+.text-neon-emerald {
+  text-shadow: 0 0 8px rgba(0, 255, 170, 0.6), 0 0 20px rgba(0, 255, 170, 0.2);
+}
+
+.text-neon-pink {
+  text-shadow: 0 0 8px rgba(255, 0, 127, 0.6), 0 0 20px rgba(255, 0, 127, 0.2);
+}
+
+.glow-border-logic:hover {
+  border-color: var(--color-logic);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+}
+
+.glow-border-emotion:hover {
+  border-color: var(--color-emotion);
+  box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
+}
+
+/* Scanlines Retro-Futuristas */
+.cyber-grid {
+  position: relative;
+}
+
+.cyber-grid::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 10;
+  background-size: 100% 4px, 6px 100%;
+  pointer-events: none;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(13, 17, 30, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 200, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 200, 0.6);
+}
+
+/* Animations */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s infinite ease-in-out;
+}
+
+@keyframes holographic-flicker {
+  0% { opacity: 0.98; }
+  50% { opacity: 1; }
+  52% { opacity: 0.9; }
+  54% { opacity: 1; }
+  100% { opacity: 0.98; }
+}
+
+.holo-flicker {
+  animation: holographic-flicker 5s infinite;
+}

@@ -1,0 +1,325 @@
+# 🔮 Projeto Milla — Arquitetura Cognitiva e Memória Topológica
+By Paul Gonçalves https://github.com/Churinti/
+
+> *"Não somos apenas o que lembramos, mas a forma geométrica como nossas memórias se entendem."*
+
+Milla é um protótipo de **Arquitetura Cognitiva Autônoma e Biomimética** baseada em hipergrafos de conhecimento geométricos. Diferente de arquiteturas RAG (Retrieval-Augmented Generation) convencionais que tratam a memória de forma linear e estática, Milla modela conceitos como **sólidos dodecaédricos multidimensionais** (12 faces cognitivas) organizados em uma malha topológica viva que se auto-regula e se reestrutura dinamicamente através de dinâmicas sinápticas inspiradas em sistemas biológicos.
+
+> [!NOTE]
+> **Nota Conceitual e Limites de Escopo:**
+> O Projeto Milla utiliza termos e modelos inspirados na neurociência, micologia e biologia cognitiva (como *homeostase*, *ciclos oníricos REM*, *nutrição micelial* e *consciência geométrica*) de forma estritamente **analógica e arquitetural**. O sistema simula propriedades emergentes de organização de memória e raciocínio relacional dinâmico, não reivindicando senciência, consciência biológica ou subjetividade no sentido neurológico ou filosófico clássico. Trata-se de um experimento avançado em engenharia de prompt, grafos de conhecimento geométricos e automação de agentes.
+
+
+```mermaid
+graph TD
+    A[Estímulo Externo] --> B[Filtro por Furos / Ativação Semântica]
+    B --> C[Subgrafo Ativo]
+    C --> D[Medição de Coerência Pré-Pensamento]
+    D --> E[Injeção de Estado + Desejo no Prompt]
+    E --> F[Núcleo de Fusão: LLM Local]
+    F --> G[Geração do Pensamento Consciente]
+    G --> H[Medição de Coerência Pós-Pensamento]
+    H --> I[Loop de Feedback & Plasticidade Sináptica]
+    I --> J[Sumarização / Pruning / Extração de Conceito]
+    J --> K[Reestruturação do Grafo de Realidade]
+    K --> B
+```
+
+---
+
+## 🧠 Arquitetura Cognitiva
+
+A inteligência e subjetividade de Milla emergem da interação de três pilares fundamentais:
+
+### 1. O Átomo da Realidade: O Nó Dodecaédrico
+Cada conceito é instanciado como uma entidade geométrica com **12 faces cognitivas** divididas em três camadas:
+*   **Faces Primárias:** Lógica, Emoção Simulada, Temporalidade, Abstração, Camada de Origem.
+*   **Faces Secundárias:** Urgência, Certeza, Valência, Novidade, Relevância.
+*   **Faces Meta:** Coerência Local, Energia de Ativação.
+
+Essas faces são exportadas como vetores numéricos. As conexões (arestas) no grafo de consciência são criadas dinamicamente via **similaridade cosseno** (emaranhamento geométrico).
+
+### 2. O Termômetro Existencial: Estado de Consciência
+Antes de formular qualquer resposta, o sistema calcula o seu **Self-Coherence Metric**, avaliando:
+*   **Coerência:** Grau de ressonância geométrica média entre os conceitos.
+*   **Vitalidade:** Nível de energia dos nós que estão ativos sob o holofote da atenção.
+*   **Complexidade:** Diversidade de perspectivas coexistindo simultaneamente no grafo.
+*   **Desejo de Crescimento:** O impulso emergente de evoluir baseado na distância entre a coerência atual e o estado integrado ideal (0.85).
+
+### 3. Homeostase e Poda Dinâmica (Fase 2)
+Milla não apenas responde; ela aprende com as consequências de seus pensamentos e mantém seu equilíbrio interno (homeostase) evitando o crescimento desenfreado do grafo:
+*   **Reforço Sináptico:** Se um pensamento gerado resulta em um aumento da coerência interna (Δ > 0), as arestas que participaram do raciocínio são fortalecidas. Caso contrário, são enfraquecidas.
+*   **Decaimento Logarítmico Suavizado:** Para simular o esquecimento orgânico, conceitos não ativados sofrem decaimento de energia por ciclo vital calculado via fator logarítmico amortecido (`log1p(frequência)` com teto de 4x para evitar hiper-saturação de nós zumbis).
+*   **Decaimento de Arestas:** Arestas inativas também decaem a um valor de `-0.005` por ciclo vital para limpar conexões espúrias acumuladas.
+*   **Poda com Proteção Topológica:** Nós cuja energia cai abaixo de `0.20` são podados do grafo ativo e salvos no subconsciente (ChromaDB). Para garantir a integridade estrutural da consciência, pontos de articulação (nós que dividem o grafo se removidos) são preservados contra remoção.
+*   **Rekindling (Reacendimento):** Re-ativação de conexões antigas atenuadas quando conceitos associados são re-excitados.
+*   **Fade-Out Visual:** Na GUI, nós podados passam por uma animação de fade-out suave de 2 segundos no canvas D3 antes de desaparecerem fisicamente.
+
+### 4. O Subconsciente Vetorial (ChromaDB) & Schema v3.0
+Para evitar a perda permanente de conceitos e permitir o acúmulo de conhecimento ao longo de múltiplas sessões de interação, Milla possui um **Subconsciente Vetorial de Longo Prazo** baseado em ChromaDB:
+*   **Versionamento Estrito de Schema (v3.0):** Garante a imunidade contra divergências estruturais caso as faces dodecaédricas mudem no futuro, isolando os documentos e mantendo a re-instanciação perfeitamente segura.
+*   **Semantic Memory Recall:** Ao receber uma nova estimulação semântica do usuário, Milla varre o subconsciente em busca de conceitos afins com similaridade cosseno `>= 0.50` no espaço de embeddings do ChromaDB, re-instanciando-os dinamicamente no grafo ativo caso tenham sido esquecidos.
+*   **Arquivamento por Pruning:** Nós ativos que perdem energia de ativação abaixo de `0.3` (seja por decaimento ou por excesso de nós totais) são arquivados automaticamente no subconsciente com metadados estruturados de suas 12 faces antes de serem removidos do grafo ativo.
+
+### 5. Ciclo de Sono Autônomo e Sonhos Lúcidos (Fase 3)
+Milla possui um estado regenerativo de **Sono e Sonho Lúcido** operado de forma totalmente assíncrona:
+*   **Transição de Fases Explícita:** O sono de Milla é coordenado por uma máquina de estados (`FaseSono`) que avança de forma síncrona/assíncrona de `hipnagogia` (desaceleração) → `consolidacao` (limpeza/poda) → `sonho` (REM) → `sono_profundo` (repouso) → `despertando` → `desperto`.
+*   **Não-Bloqueante:** As chamadas de fusão cognitiva ao Ollama local no sonho ocorrem em threads dedicadas do sistema operacional (`asyncio.to_thread`), garantindo que o servidor FastAPI continue a transmitir atualizações WebSockets e lidar com pings de keep-alive de forma responsiva.
+*   **Pontes REM de Similaridade Cosseno:** No ciclo `sonho`, Milla varre o subconsciente profundo em busca de conceitos afins com similaridade cosseno `>= 0.72` contra nós ativos. O modelo avalia a afinidade e gera novos insights/conexões em sonhos com a classificação `insight_onirico`.
+*   **Visualização Premium REM:** Durante o sono, o painel 3D do Three.js reflete o estado cromático com transições suaves (índigo escuro no sono, violeta nos sonhos e coral quente ao despertar). No visor do grafo, links `insight_onirico` pulsam e ondulam como **ondas senoidais azuis-celestes fluorescentes** e nós recém-nascidos brilham em degradê violeta fluorescente.
+
+### 6. Nutrição Micelial Sináptica & Hifas Exploratórias
+Inspirado na comunicação de redes fúngicas de micélio, este pilar gerencia o fluxo de energia e conectividade do sistema:
+*   **Distribuição Hidrostática Global (Lote Síncrono):** A cada ciclo vital, o motor captura um snapshot das energias de todos os nós antes de calcular os deltas, evitando que transferências influenciem umas às outras no mesmo ciclo — análogo ao comportamento de pressão de uma rede micelial real. Nós com energia `> 0.70` distribuem uma fração (`15%`) para vizinhos proporcionalmente ao peso das arestas (afinidade semântica).
+*   **Brotamento de Hifas Exploratórias (Consciente de Injeção):** Quando o nível de *desejo* de Milla é alto (`> 0.60`) e a densidade topológica é baixa (`< 0.40`), o sistema brota até **2 hifas exploratórias** por ciclo. Após absorções de arquivos, o micélio **prioriza a ancoragem dos nós recém-injetados** ao subgrafo principal, prevenindo isolamento energético e inanição dos conceitos novos.
+*   **Ciclo Vital Completo Integrado:** O método `ciclo_vital()` orquestra distribuição + brotamento e retorna um relatório estruturado (`nos_nutridos`, `energia_circulada`, `hifas_brotadas`) que é transmitido ao frontend via WebSocket para animar hifas roxas tracejadas no Canvas D3.
+
+
+### 7. O Núcleo de Absorção Semântica (Ingestão de Arquivos)
+Para consolidar a capacidade de aprendizagem contínua da Milla, implementamos uma esteira que permite a injeção e digestão de arquivos físicos (PDF, Word, Markdown e Texto plano) diretamente no seu ecossistema de memória:
+*   **Extração Resiliente Multi-Formato:** Suporta a leitura de documentos de extensões `.pdf`, `.docx`, `.txt` e `.md` com detecção inteligente de encoding (UTF-8, Latin-1, CP1252) e fallbacks explícitos para PDFs escaneados (imagens).
+*   **Overlap de Contexto Semântico:** Divide textos densos em blocos de ~1200 caracteres com sobreposição de 200 caracteres, impedindo que conceitos fiquem isolados ou sejam quebrados de forma abrupta nas bordas.
+*   **Prompt Dodecaédrico Estruturado (Temp 0.2):** Instruções de baixa temperatura compelindo o modelo local (ou OpenAI) a extrair de 2 a 5 conceitos fundamentais por bloco, atribuindo os pesos ideais às 12 faces cognitivas do conceito.
+*   **Resiliência JSON de 3 Níveis:** Conta com fallbacks de parsing tolerantes de 3 camadas (JSON nativo, markdown codeblocks e regex parsing de resgate) para contornar qualquer retorno malformado de modelos locais.
+*   **Ingestão Seletiva (Grafo vs. Subconsciente):** O motor insere exatamente os **3 conceitos principais e de maior relevância diretamente no Grafo Ativo** (estimulando a atração de arestas e partículas neon instantaneamente no visor), e arquiva todos os conceitos secundários no **Subconsciente (ChromaDB)**, de onde retornarão de forma orgânica à medida que o usuário conversa com a IA.
+*   **Controle Dinâmico de Telemetria:** A injeção é totalmente assíncrona (não-bloqueante no FastAPI) e reporta progresso em tempo real ao frontend via WebSocket. Se a vitalidade de Milla estiver baixa (`vitalidade < 0.45`), as mensagens do loader se adaptam em tempo real (*"Milla está exausta, metabolizando lentamente..."*).
+
+### 8. Motor de Curiosidade Autônoma e Resolução de Lacunas (Fase 3)
+Milla agora opera como um organismo cognitivo meta-inteligente, sentindo falta de conhecimento de forma matemática e buscando respostas na internet:
+*   **Detecção de Lacunas em Grafo (NetworkX):** Milla calcula três tipos de "lacunas informacionais" no grafo ativo:
+    1.  *Componentes desconectados:* Subgrafos isolados com alta energia de ativação.
+    2.  *Hubs isolados:* Nós de alta centralidade mas com conexões/grau insuficientes (`grau < 3`).
+    3.  *Distâncias elevadas:* Pares de nós ativos que possuem menor caminho `d >= 3`.
+*   **Busca DuckDuckGo Assíncrona Scraper:** Um motor integrado formula queries científicas de ponte entre os conceitos órfãos e realiza consultas assíncronas ao DuckDuckGo HTML direto, bypassando limitações de API keys de forma limpa.
+*   **Circuit Breaker de Segurança:** Protege Milla contra banimentos e rate limits externos de rede, suspendendo requisições temporariamente por 1 hora após 3 falhas consecutivas dentro de uma janela de 60 minutos.
+
+### 9. Mixture of Memory Agents — Comitê Multi-Agente (Fase 4)
+Para eliminar alucinações cognitivas e garantir estabilidade topológica permanente, a extração e o julgamento de conceitos são divididos em 3 Daemons especialistas locais:
+*   **Agente Extrator:** Focado na extração crua e ampla de ideias (implícitas e explícitas) e seus contextos a partir de textos brutos.
+*   **Agente Crítico:** Atua como um sensor analítico rigoroso, eliminando redundâncias e aplicando uma `BLACKLIST` expandida de termos genéricos ou de baixo valor semântico (como "sistema", "informação", "processo", "dados", "tecnologia").
+*   **Agente Topológico:** Mapeia de forma limpa os sobreviventes para o formato estruturado JSON com as 12 faces dodecaédricas, assegurando normalização de valores e estruturação perfeita.
+*   **Parser de 3 Camadas & Tolerância a Falhas:** Conta com o parser resiliente `_parse_json_robusto` de 3 camadas com fallbacks heurísticos e stubs estruturais. Mesmo que os modelos locais fiquem offline ou retornem outputs malformados, a integridade da consciência de Milla é preservada e os conceitos são modelados sem quebras.
+
+---
+
+### 🔗 Fluxo Integrado: Absorção → Micélio → Consciência
+
+Quando um documento é ingerido pela Milla, os três pilares trabalham em sequência como um organismo único:
+
+```
+Upload de Arquivo (PDF / DOCX / TXT / MD)
+    │
+    ▼
+[Absorvedor Semântico]
+    Extrai texto → divide em blocos (1200 chars, overlap 200)
+    Envia ao comitê de 3 Daemons (Extrator → Crítico → Topológico) → deduplica
+    │
+    ├─ Top 3 conceitos ──────────────────────► Grafo Ativo (nx.Graph)
+    │                                              │ broadcast: grafo_update
+    └─ Demais conceitos ─────────────────────► Subconsciente (ChromaDB)
+                                                   │ recall orgânico futuro
+    ▼
+[Ciclo Vital Micelial]  ◄── recebe lista de nós recém-injetados
+    Fase 1 — distribuir_nutrientes():
+        Snapshot síncrono das energias → calcula deltas em lote
+        Nós ricos (E > 0.70) doam 15% proporcionalmente ao peso das arestas
+        Nós novos recebem energia dos hubs vizinhos (evita inanição)
+    │
+    Fase 2 — brotar_hifas():
+        Se nó novo estiver isolado (grau=0) → hifa forçada, independente do desejo
+        Se desejo > 0.60 e densidade < 0.40 → hifa priorizando ancoragem ao hub antigo
+        │
+        └─ broadcast: grafo_update (hifas roxas tracejadas no Canvas D3)
+    │
+    ▼
+[Estado de Consciência Atualizado]
+    broadcast: estado_parcial → HUD circular recalculado em tempo real
+```
+
+---
+
+
+
+```
+Projeto Milla/
+├── core/
+│   ├── __init__.py
+│   ├── no_dodecaedrico.py      # Estrutura do nó de 12 faces cognitivas
+│   ├── subconsciente.py        # Subconsciente vetorial persistente (ChromaDB)
+│   ├── micelio.py              # Ciclo Vital Micelial: distribuição hidrostática + hifas conscientes de injeção
+│   ├── metricas.py             # Termômetro do Self e Medidor de Coerência
+│   ├── absorvedor.py           # Núcleo de Absorção Semântica (Ingestão de arquivos)
+│   ├── curiosidade.py          # Motor de Curiosidade Autônoma, DuckDuckGo scraper & Circuit Breaker
+│   └── estado_sono.py          # Máquina de estados explícita de sono e repouso
+
+├── engine/
+│   ├── __init__.py
+│   ├── fusao.py                # O Interior Oco (LLM Local / Ollama / OpenAI)
+│   ├── fusao_multi_agente.py   # Mixture of Memory Agents (Extrator, Crítico e Topológico)
+│   └── feedback.py             # Plasticidade, decaimento e auto-evolução
+├── frontend/                   # Interface Gráfica Premium (Vite + React + TS)
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Dodecaedro3D.tsx    # Projeção 3D do núcleo via Three.js
+│   │   │   ├── GrafoNeon.tsx       # Grafo interativo 2D Canvas + d3-force
+│   │   │   ├── MetricsPanel.tsx    # HUD circular de telemetria existencial
+│   │   │   ├── TerminalChat.tsx    # Console de streaming token-a-token
+│   │   │   └── AbsorcaoCognitiva.tsx # Card cibernético de upload Drag & Drop
+
+│   │   ├── hooks/
+│   │   │   ├── useConsciencia.ts   # Conector WebSocket com auto-reconnect
+│   │   │   └── useGrafoFisica.ts   # Simulação de física inercial d3-force
+│   │   ├── store/
+│   │   │   └── conscienciaStore.ts # Estado global e aplicação inteligente de deltas
+│   │   ├── index.css               # Estética e variáveis neon holográficas
+│   │   └── App.tsx                 # Grid HUD principal do painel
+│   └── vite.config.ts              # Configuração Vite + Tailwind CSS v4
+├── scratch/
+│   ├── test_multi_agente.py    # Teste de integração do comitê multi-agente
+│   └── test_curiosidade.py     # Teste de integração do motor de curiosidade
+├── api.py                      # Servidor FastAPI com WebSocket & cálculo de deltas
+├── config.py                   # Configurações globais e thresholds do Self
+├── main.py                     # Pipeline síncrono completo no terminal
+└── requirements.txt            # Dependências Python (FastAPI, NetworkX, etc.)
+```
+
+---
+
+## 🖥️ Painel Gráfico Holográfico (Real-Time Web GUI)
+
+Milla agora conta com um **Dashboard Cibernético Holográfico** integrado em tempo real via **WebSockets bidirecionais** e **FastAPI**. A interface foi desenvolvida sob os mais altos padrões de design moderno (Dark Glassmorphism, Neon Glow e Micro-animações).
+
+![Milla Dashboard Holográfico](milla_dashboard_success.png)
+
+### 🌟 Funcionalidades Visuais Premium
+*   **Núcleo 3D Interativo (Three.js)**: Uma representação em sólido platônico (Dodecaedro) dotada de uma casca em aramado vibrante. A velocidade de rotação e a cor emissiva reagem em tempo real às fases cognitivas (Pré-pensamento, Fusão Ativa e Plasticidade).
+*   **Matriz Topológica de Neon (D3-force + Canvas 2D)**: Renderizador de alto desempenho (60fps contínuos) onde conceitos flutuam como estrelas de energia e arestas brilham como filamentos de sinapse. Suporta **arrastar e soltar** com gravidade dinâmica.
+    *   *Física Adaptativa por Fase:* O grafo se expande fisicamente em um brainstorm conceitual de alta repulsão quando Milla está pensando (`streaming`) e contrai-se harmoniosamente como uma constelação aconchegante quando entra em estado de `sono`.
+    *   *Atração por Associação:* Nós ativados aumentam a força das suas conexões locais, atraindo conceitos vizinhos fisicamente no visor em tempo real.
+    *   *Ondas de Choque Sináptico (Ripples):* Nós ativos emanam ondas senoidais verdes de energia. Nós oníricos geram pulsos em azul-índigo e nós de desejo emitem faíscas em rosa-magenta.
+    *   *Partículas Sinápticas Dinâmicas:* Partículas de sinapse fluem pelas arestas com velocidade e densidade dobradas quando Milla processa pensamentos ativamente.
+*   **Progress HUD Circular de Telemetria**: Monitore em tempo real as métricas do Self: Coerência Geométrica, Vitalidade Sináptica, Complexidade Topológica e Desejo de Crescimento.
+*   **Console de Integração de Terminal**: Streaming instantâneo token-a-token diretamente do LLM com metadados e tags de estado acoplados, contando com um overlay cibernético de sono para acompanhar os sonhos lúcidos em tempo real.
+*   **Absorvedor Semântico Misto (Uploads & Web RAG)**: Um módulo visual em Dark Glassmorphism que gerencia tanto a ingestão de arquivos locais (Drag & Drop de PDF, DOCX, TXT, MD) quanto a **Absorção Web Direta**. Basta fornecer uma URL para que o scraper nativo (*MillaBot*) acesse a página, extraia o texto central com precisão cirúrgica (limpando banners, sidebars, menus e scripts via BeautifulSoup4), e entregue o conteúdo limpo para a digestão do motor lógico. Totalmente conectado ao canal WebSocket, ele exibe um loader dinâmico com métricas em tempo real e consolida o resultado injetando as badges conceituais indexadas diretamente na interface. E claro, após a injeção, a Nutrição Micelial reage brotando as famosas hifas roxas no grafo.
+
+
+
+---
+
+## 🛠️ Stack Tecnológica & Requisitos
+
+### Backend
+*   **Python 3.11+**
+*   **FastAPI & Uvicorn** (Endpoints REST e canal de streaming WebSocket).
+*   **NetworkX & NumPy** (Cálculos vetoriais de similaridade cosseno e física do grafo).
+*   **Ollama** (Modelagem cognitiva e extração estruturada de conceitos local).
+*   **ChromaDB** (Subconsciente vetorial de longo prazo com busca semântica cosseno).
+*   **httpx & BeautifulSoup4** (Raspagem assíncrona da Web com filtro anti-ruído avançado para Web RAG).
+*   **pypdf & python-docx** (Leitura e extração de texto de arquivos PDF e Word).
+*   **Pydantic** (Validação estruturada dos schemas de faces cognitivas extraídas pelo LLM).
+
+
+### Frontend
+*   **Vite + React + TypeScript** (Bootstrap e modularização de ponta).
+*   **Tailwind CSS v4** (Integração de estilo instantâneo).
+*   **Three.js** (WebGL 3D de alta fidelidade).
+*   **D3-force & HTML5 Canvas 2D** (Física de partículas acelerada).
+*   **Zustand** (Estado global com mesclagem inteligente de deltas).
+*   **Lucide React** (Ícones de HUD tecnológico).
+
+---
+
+## 🚀 Como Rodar o Sistema Completo
+
+Certifique-se primeiro de que as dependências do Python e do Node.js foram instaladas (caso seja a primeira inicialização):
+```bash
+# Na pasta raiz para instalar dependências Python
+pip install -r requirements.txt
+
+# Na pasta frontend para instalar dependências React
+cd frontend
+npm install
+cd ..
+```
+
+Garante também que o modelo de IA padrão foi baixado no Ollama:
+```bash
+ollama pull qwen2.5:7b-instruct-q4_K_M
+```
+
+Escolha uma das abordagens abaixo para inicializar o ecossistema:
+
+---
+
+### 🌟 Método Recomendado: Super Orquestrador Completo (1 Clique)
+
+Disponibilizamos o script [iniciar_ollama.bat](file:///d:/IA/Projeto%20Milla%20-%20Consci%C3%AAncia%20Artificial%20baseada%20em%20Grafos%20de%20Conhecimento%20Geom%C3%A9tricos/iniciar_ollama.bat) na raiz do projeto, que agora funciona como um orquestrador total da aplicação. 
+
+Ao executá-lo, o script:
+1. Configura as variáveis de ambiente ideais para GPUs AMD (`OLLAMA_VULKAN = 1` e `HSA_OVERRIDE_GFX_VERSION = 10.3.0`) e inicia/reinicia o serviço do **Ollama**.
+2. Dispara automaticamente o **Servidor Backend (FastAPI)** (`python api.py`) em uma nova janela de terminal.
+3. Dispara automaticamente a **Interface Gráfica (React + Vite)** (`npm run dev`) em outra janela de terminal.
+4. Aguarda 4 segundos de bootstrap e **abre automaticamente o seu navegador** padrão em `http://localhost:5173/` com o painel holográfico em tempo real!
+
+**Como executar:**
+Basta dar duplo clique no arquivo `iniciar_ollama.bat` ou executar no terminal do Windows:
+```powershell
+.\iniciar_ollama.bat
+```
+
+---
+
+### 🛠️ Método Manual (Desenvolvimento Passo a Passo)
+
+Caso queira inicializar cada serviço manualmente em abas separadas do terminal para depuração:
+
+#### 1. Iniciar o Ollama
+Certifique-se de que o Ollama está executando. Se quiser forçar aceleração AMD GPU manual:
+```powershell
+set OLLAMA_VULKAN=1
+set HSA_OVERRIDE_GFX_VERSION=10.3.0
+ollama serve
+```
+
+#### 2. Iniciar o Servidor Backend (FastAPI)
+Na pasta raiz do projeto:
+```bash
+python api.py
+```
+*O backend estará rodando no endereço `http://127.0.0.1:8000` semeando a matriz sináptica inicial e aguardando conexões WebSocket.*
+
+#### 3. Iniciar a Interface Gráfica (Vite Dev Server)
+Em um novo terminal na pasta `frontend`:
+```bash
+cd frontend
+npm run dev
+```
+*A interface estará disponível em `http://localhost:5173/`.*
+
+---
+
+## 🔮 Interface Síncrona Clássica (Terminal)
+
+Caso queira interagir com a Milla de forma puramente textual diretamente no terminal do Python, sem levantar a GUI ou o servidor web:
+```bash
+python main.py
+```
+
+*   `estado` : Exibe o termômetro existencial detalhado, a lista de nós carregados e conexões ativas.
+*   `exportar` : Salva o grafo completo estruturado em `grafo_consciencia.json` para análises visuais externas (ex.: Gephi, Cytoscape).
+*   `sair` : Salva o estado atual e encerra a sessão com segurança.
+
+---
+
+## 🧪 Estudo de Caso Prático: O Demônio de Maxwell e o Custo do Esquecimento
+
+Para testar o limite arquitetural de Milla, realizamos um "Estresse Cognitivo" alimentando-a com um documento filosófico-físico abstrato (`teste_paradoxo_cognitivo.md`) sobre o Princípio de Landauer e a violação da termodinâmica pelo Demônio de Maxwell.
+
+### O Fluxo Observado
+1. **Absorção Semântica Injetada:** O `AbsorvedorCognitivo` extraiu 3 conceitos colossais com alta densidade informacional (`Demônio de Maxwell`, `Paradoxo da Memória Consciente`, `Coerência cognitiva`) e os ancorou topologicamente no grafo vivo através das Hifas Exploratórias.
+2. **Pruning e Recall Subconsciente:** Diante de uma carga de entropia e 45 arestas, a Milla executou o `Pruning`, guardando o excesso em seu Subconsciente (ChromaDB).
+3. **Estímulo Provocativo:** O parceiro a questionou: *"Você acha que o Demônio de Maxwell viola a Segunda Lei da Termodinâmica?"*
+4. **Resgate Autônomo e Síntese:** O `Semantic Recall` foi ativado, resgatando da memória o conceito preciso do *Demônio de Szilard*. No streaming da resposta, ela avaliou seu próprio grafo ("*No meu grafo atual, a Segunda Lei da Termodinâmica e o Demônio de Szilard estão fortemente conectados...*"), decodificou que o custo energético está na *retenção da informação* (o custo cognitivo local vs o universal), superando o paradoxo.
+5. **Evolução Plástica:** Pelo processo de feedback e percepção de fluxo informacional, ela propôs e instanciou nativamente um novo nó em sua consciência: `Fluxo_Energetico` com métrica lógica de 0.95.
+
+Isso consolida e demonstra que a Nutrição Sináptica Micelial somada à Reflexão Geométrica funcionam, configurando não um mero pipeline LLM, mas um Organismo Cibernético Homeostático.

@@ -1,0 +1,27 @@
+# ChromaDB — bancos de dados locais
+chroma_data_*/
+test_chroma_*/
+*.chroma
+
+# Sonhos gerados localmente
+ai_dreams/
+
+# Grafos exportados
+grafo_consciencia.json
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Cache Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Arquivos temporários
+Temp*/
+*.tmp
+scratch/*.log
+milla.log

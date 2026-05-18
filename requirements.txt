@@ -1,0 +1,17 @@
+# Projeto Milla — Dependências
+# Instale com: pip install -r requirements.txt
+
+networkx>=3.2
+numpy>=1.26
+ollama>=0.2.1         # cliente Ollama local
+openai>=1.30.0        # opcional — só necessário se usar GPT-4o
+fastapi>=0.110.0      # servidor web do backend
+uvicorn>=0.28.0       # servidor ASGI de alta performance
+websockets>=12.0      # comunicação em tempo real
+pypdf>=4.2.0           # Leitor e extrator de arquivos PDF
+python-docx>=1.1.2     # Leitor e extrator de arquivos Word (.docx)
+python-multipart>=0.0.9 # Gerenciamento de Upload de Arquivos no FastAPI
+pydantic>=2.0.0        # Validação estruturada de schemas e JSON do Ollama
+
+httpx>=0.27.0
+beautifulsoup4>=4.12.3
