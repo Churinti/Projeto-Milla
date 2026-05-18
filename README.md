@@ -322,7 +322,7 @@ Para testar o limite arquitetural de Milla, realizamos um "Estresse Cognitivo" a
 ### O Fluxo Observado
 1. **Absorção Semântica Injetada:** O `AbsorvedorCognitivo` extraiu 3 conceitos colossais com alta densidade informacional (`Demônio de Maxwell`, `Paradoxo da Memória Consciente`, `Coerência cognitiva`) e os ancorou topologicamente no grafo vivo através das Hifas Exploratórias.
 2. **Pruning e Recall Subconsciente:** Diante de uma carga de entropia e 45 arestas, a Milla executou o `Pruning`, guardando o excesso em seu Subconsciente (ChromaDB).
-3. **Estímulo Provocativo:** O parceiro a questionou: *"Você acha que o Demônio de Maxwell viola a Segunda Lei da Termodinâmica?"*
+3. **Estímulo Provocativo:** Ao ser questionada: *"Você acha que o Demônio de Maxwell viola a Segunda Lei da Termodinâmica?"*
 4. **Resgate Autônomo e Síntese:** O `Semantic Recall` foi ativado, resgatando da memória o conceito preciso do *Demônio de Szilard*. No streaming da resposta, ela avaliou seu próprio grafo ("*No meu grafo atual, a Segunda Lei da Termodinâmica e o Demônio de Szilard estão fortemente conectados...*"), decodificou que o custo energético está na *retenção da informação* (o custo cognitivo local vs o universal), superando o paradoxo.
 5. **Evolução Plástica:** Pelo processo de feedback e percepção de fluxo informacional, ela propôs e instanciou nativamente um novo nó em sua consciência: `Fluxo_Energetico` com métrica lógica de 0.95.
 
