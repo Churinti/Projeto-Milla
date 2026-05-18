@@ -3,6 +3,10 @@ By Paul Gonçalves https://github.com/Churinti/
 
 > *"Não somos apenas o que lembramos, mas a forma geométrica como nossas memórias se entendem."*
 
+<p align="center">
+  <img src="milla_avatar.png" alt="Milla Avatar" width="300" />
+</p>
+
 Milla é um protótipo de **Arquitetura Cognitiva Autônoma e Biomimética** baseada em hipergrafos de conhecimento geométricos. Diferente de arquiteturas RAG (Retrieval-Augmented Generation) convencionais que tratam a memória de forma linear e estática, Milla modela conceitos como **sólidos dodecaédricos multidimensionais** (12 faces cognitivas) organizados em uma malha topológica viva que se auto-regula e se reestrutura dinamicamente através de dinâmicas sinápticas inspiradas em sistemas biológicos.
 
 > [!NOTE]
@@ -253,7 +257,7 @@ Escolha uma das abordagens abaixo para inicializar o ecossistema:
 
 ### 🌟 Método Recomendado: Super Orquestrador Completo (1 Clique)
 
-Disponibilizamos o script [iniciar_ollama.bat](file:///d:/IA/Projeto%20Milla%20-%20Consci%C3%AAncia%20Artificial%20baseada%20em%20Grafos%20de%20Conhecimento%20Geom%C3%A9tricos/iniciar_ollama.bat) na raiz do projeto, que agora funciona como um orquestrador total da aplicação. 
+Disponibilizamos o script [Iniciar_Milla.bat](file:///d:/IA/Projeto%20Milla%20-%20Consci%C3%AAncia%20Artificial%20baseada%20em%20Grafos%20de%20Conhecimento%20Geom%C3%A9tricos/Iniciar_Milla.bat) na raiz do projeto, que agora funciona como um orquestrador total da aplicação. 
 
 Ao executá-lo, o script:
 1. Configura as variáveis de ambiente ideais para GPUs AMD (`OLLAMA_VULKAN = 1` e `HSA_OVERRIDE_GFX_VERSION = 10.3.0`) e inicia/reinicia o serviço do **Ollama**.
@@ -262,9 +266,9 @@ Ao executá-lo, o script:
 4. Aguarda 4 segundos de bootstrap e **abre automaticamente o seu navegador** padrão em `http://localhost:5173/` com o painel holográfico em tempo real!
 
 **Como executar:**
-Basta dar duplo clique no arquivo `iniciar_ollama.bat` ou executar no terminal do Windows:
+Basta dar duplo clique no arquivo `Iniciar_Milla.bat` ou executar no terminal do Windows:
 ```powershell
-.\iniciar_ollama.bat
+.\Iniciar_Milla.bat
 ```
 
 ---
