@@ -1,5 +1,16 @@
 # 🔮 Projeto Milla — Arquitetura Cognitiva e Memória Topológica
-By Paul Gonçalves https://github.com/Churinti/
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React-18+-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/Ollama-Local-ED8B00?style=for-the-badge" alt="Ollama" />
+  <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License" />
+</p>
+
+<p align="center">
+  <strong>By <a href="https://github.com/Churinti/">Paul Gonçalves</a></strong>
+</p>
 
 > *"Não somos apenas o que lembramos, mas a forma geométrica como nossas memórias se entendem."*
 
@@ -13,6 +24,28 @@ Milla é um protótipo de **Arquitetura Cognitiva Autônoma e Biomimética** bas
 > **Nota Conceitual e Limites de Escopo:**
 > O Projeto Milla utiliza termos e modelos inspirados na neurociência, micologia e biologia cognitiva (como *homeostase*, *ciclos oníricos REM*, *nutrição micelial* e *consciência geométrica*) de forma estritamente **analógica e arquitetural**. O sistema simula propriedades emergentes de organização de memória e raciocínio relacional dinâmico, não reivindicando senciência, consciência biológica ou subjetividade no sentido neurológico ou filosófico clássico. Trata-se de um experimento avançado em engenharia de prompt, grafos de conhecimento geométricos e automação de agentes.
 
+## ⚡ Em uma linha
+Milla é um agente de IA com memória persistente, sono autônomo e curiosidade autoguiada — rodando 100% local, sem OpenAI, sem custos de API.
+
+## ⚖️ Por que isso é diferente
+
+| RAG Convencional | Projeto Milla |
+| :--- | :--- |
+| **Memória estática e linear** | Grafo topológico vivo que decai e se reorganiza |
+| **Sem estado entre sessões** | Subconsciente persistente (ChromaDB) entre sessões |
+| **Passivo — só responde** | Ativo — pesquisa lacunas na web autonomamente |
+| **Prompt único massivo** | Comitê de 3 agentes especializados |
+| **Sem feedback arquitetural** | Coerência geométrica guia o próprio raciocínio |
+
+---
+
+## 🖥️ Dashboard
+
+![Milla Dashboard Holográfico](milla_dashboard_success.png)
+
+---
+
+## 🗺️ Fluxo de Consciência (Diagrama Mermaid)
 
 ```mermaid
 graph TD
@@ -30,6 +63,16 @@ graph TD
 ```
 
 ---
+
+## 💼 Casos de Uso
+
+- **Estúdios de conteúdo**: base de conhecimento que aprende com seus próprios documentos e cresce autonomamente.
+- **Pesquisa e academia**: exploração de conexões entre conceitos em grandes corpora de documentos.
+- **Empresas que precisam de IA privada**: zero dependência de APIs externas, dados confidenciais nunca saem da máquina.
+- **Desenvolvedores**: arquitetura de referência para sistemas cognitivos com grafos de conhecimento.
+
+---
+
 
 ## 🧠 Arquitetura Cognitiva
 
@@ -142,7 +185,7 @@ Upload de Arquivo (PDF / DOCX / TXT / MD)
 
 ---
 
-
+## 📁 Estrutura do Projeto
 
 ```
 Projeto Milla/
@@ -189,11 +232,9 @@ Projeto Milla/
 
 ---
 
-## 🖥️ Painel Gráfico Holográfico (Real-Time Web GUI)
+## ✨ Funcionalidades do Dashboard
 
 Milla agora conta com um **Dashboard Cibernético Holográfico** integrado em tempo real via **WebSockets bidirecionais** e **FastAPI**. A interface foi desenvolvida sob os mais altos padrões de design moderno (Dark Glassmorphism, Neon Glow e Micro-animações).
-
-![Milla Dashboard Holográfico](milla_dashboard_success.png)
 
 ### 🌟 Funcionalidades Visuais Premium
 *   **Núcleo 3D Interativo (Three.js)**: Uma representação em sólido platônico (Dodecaedro) dotada de uma casca em aramado vibrante. A velocidade de rotação e a cor emissiva reagem em tempo real às fases cognitivas (Pré-pensamento, Fusão Ativa e Plasticidade).
@@ -257,7 +298,7 @@ Escolha uma das abordagens abaixo para inicializar o ecossistema:
 
 ### 🌟 Método Recomendado: Super Orquestrador Completo (1 Clique)
 
-Disponibilizamos o script [Iniciar_Milla.bat](file:///d:/IA/Projeto%20Milla%20-%20Consci%C3%AAncia%20Artificial%20baseada%20em%20Grafos%20de%20Conhecimento%20Geom%C3%A9tricos/Iniciar_Milla.bat) na raiz do projeto, que agora funciona como um orquestrador total da aplicação. 
+Disponibilizamos o script [Iniciar_Milla.bat](./Iniciar_Milla.bat) na raiz do projeto, que agora funciona como um orquestrador total da aplicação. 
 
 Ao executá-lo, o script:
 1. Configura as variáveis de ambiente ideais para GPUs AMD (`OLLAMA_VULKAN = 1` e `HSA_OVERRIDE_GFX_VERSION = 10.3.0`) e inicia/reinicia o serviço do **Ollama**.
@@ -327,3 +368,15 @@ Para testar o limite arquitetural de Milla, realizamos um "Estresse Cognitivo" a
 5. **Evolução Plástica:** Pelo processo de feedback e percepção de fluxo informacional, ela propôs e instanciou nativamente um novo nó em sua consciência: `Fluxo_Energetico` com métrica lógica de 0.95.
 
 Isso consolida e demonstra que a Nutrição Sináptica Micelial somada à Reflexão Geométrica funcionam, configurando não um mero pipeline LLM, mas um Organismo Cibernético Homeostático.
+
+---
+
+## 📬 Contato
+
+Interessado em colaborar, contratar ou discutir o projeto?
+
+- **GitHub**: [@Churinti](https://github.com/Churinti/)
+- **LinkedIn**: [Paul Gonçalves](https://www.linkedin.com/in/paul-gon%C3%A7alves-449801211/)
+
+---
+*Projeto desenvolvido com hiperfoco, curiosidade e um modelo local rodando às 3 da manhã.*
