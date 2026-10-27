@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend · Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # README declara 3.11+; 3.13 é o interpretador usado no desenvolvimento.
+        python-version: ["3.11", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Verificar sintaxe de todo o código Python
+        run: python -m compileall -q api.py main.py config.py core engine scratch
+
+      - name: Rodar os testes
+        # O pytest.ini aponta para scratch/ e liga o asyncio_mode=auto,
+        # então `pytest` sem argumentos já roda a suíte inteira.
+        run: python -m pytest -v
+
+  frontend:
+    name: Frontend · Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Vite 8 exige Node 20.19+ ou 22.12+.
+        node-version: [22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependências
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint (ESLint)
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Type-check e build de produção
+        # `build` já roda `tsc -b` antes do Vite, então o type-check está aqui.
+        working-directory: frontend
+        run: npm run build

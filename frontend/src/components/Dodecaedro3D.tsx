@@ -159,7 +159,7 @@ export const Dodecaedro3D: React.FC = () => {
 
     // 4. Loop de Animação Reativa
     let animationFrameId: number;
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { FileUp, FileText, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { useConscienciaStore } from '../store/conscienciaStore';
+import type { AbsorcaoStatus } from '../store/conscienciaStore';
 
 type EstadoAbsorcao = 'idle' | 'dragging' | 'processando' | 'sucesso' | 'erro';
 
@@ -45,21 +46,31 @@ export function AbsorcaoCognitiva() {
     }
   }, []);
 
-  // Monitora alterações do progresso via WebSocket para atualizar a máquina de estados local
+  // Monitora alterações do progresso via WebSocket para atualizar a máquina de estados local.
+  // A store da Zustand é um sistema externo ao React: inscrevemos nela e só chamamos setState
+  // dentro do callback da inscrição — no corpo do efeito isso violaria react-hooks/set-state-in-effect.
   useEffect(() => {
-    if (!absorcaoStatus) return;
+    const aplicar = (status: AbsorcaoStatus | null) => {
+      if (!status) return;
 
-    if (absorcaoStatus.etapa === 'erro') {
-      pararFrases();
-      setEstado('erro');
-      setErroMensagem(absorcaoStatus.mensagem || 'Erro desconhecido durante o processamento.');
-    } else if (absorcaoStatus.progresso === 100) {
-      pararFrases();
-      setEstado('sucesso');
-    } else if (absorcaoStatus.ativo) {
-      setEstado('processando');
-    }
-  }, [absorcaoStatus, pararFrases]);
+      if (status.etapa === 'erro') {
+        pararFrases();
+        setEstado('erro');
+        setErroMensagem(status.mensagem || 'Erro desconhecido durante o processamento.');
+      } else if (status.progresso === 100) {
+        pararFrases();
+        setEstado('sucesso');
+      } else if (status.ativo) {
+        setEstado('processando');
+      }
+    };
+
+    return useConscienciaStore.subscribe((atual, anterior) => {
+      if (atual.absorcaoStatus !== anterior.absorcaoStatus) {
+        aplicar(atual.absorcaoStatus);
+      }
+    });
+  }, [pararFrases]);
 
   const enviarArquivo = useCallback(async (file: File) => {
     const extensao = '.' + file.name.split('.').pop()?.toLowerCase();

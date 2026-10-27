@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useConscienciaStore } from '../store/conscienciaStore';
 import { useGrafoFisica } from '../hooks/useGrafoFisica';
+import type { NoFisico } from '../hooks/useGrafoFisica';
 import type { No } from '../types/consciencia';
 
 export const GrafoNeon: React.FC = () => {
@@ -10,12 +11,15 @@ export const GrafoNeon: React.FC = () => {
   const { nos, arestas, nosAtivados, caminhoIluminado, faseCognitiva } = useConscienciaStore();
   const [dimensions, setDimensions] = useState({ width: 600, height: 400 });
   const [hoveredNode, setHoveredNode] = useState<No | null>(null);
-  const [draggedNode, setDraggedNode] = useState<any | null>(null);
+  // O nó sob o arrasto não é estado de renderização: ele só é lido dentro dos
+  // handlers de mouse, então vive num ref (mantê-lo em useState re-renderizaria
+  // o componente a cada pixel arrastado).
+  const draggedRef = useRef<NoFisico | null>(null);
 
   const renderFrameRef = useRef<() => void>(() => {});
 
   // 1. Invoca a simulação física reativa ao estado cognitivo da Milla
-  const { nosFisica, arestasFisica, simulation } = useGrafoFisica(
+  const { lerNosFisica, lerArestasFisica, lerSimulacao } = useGrafoFisica(
     nos,
     arestas,
     dimensions.width,
@@ -41,7 +45,7 @@ export const GrafoNeon: React.FC = () => {
       const time = Date.now() / speedFactor;
 
       // A. Renderizar Arestas (Filamentos de Neon)
-      arestasFisica.forEach((edge: any) => {
+      lerArestasFisica().forEach((edge) => {
         const source = edge.source;
         const target = edge.target;
         if (!source || !target || typeof source === 'string' || typeof target === 'string') return;
@@ -185,7 +189,7 @@ export const GrafoNeon: React.FC = () => {
       });
 
       // B. Renderizar Nós (Estrelas de Energia Pulsantes)
-      nosFisica.forEach((node: any) => {
+      lerNosFisica().forEach((node) => {
         if (!node || !node.conceito) return;
 
         // Sanitização estrita de coordenadas do Nó contra NaNs
@@ -309,7 +313,7 @@ export const GrafoNeon: React.FC = () => {
     } catch (err) {
       console.error('[GrafoNeon] Erro crítico no loop de renderização do Canvas:', err);
     }
-  }, [dimensions, hoveredNode, nosAtivados, caminhoIluminado, nosFisica, arestasFisica, faseCognitiva]);
+  }, [dimensions, hoveredNode, nosAtivados, caminhoIluminado, lerNosFisica, lerArestasFisica, faseCognitiva]);
 
   // Atualiza a referência mutável para o frame atual do useCallback
   useEffect(() => {
@@ -320,7 +324,7 @@ export const GrafoNeon: React.FC = () => {
   useEffect(() => {
     if (!containerRef.current) return;
     const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
+      for (const entry of entries) {
         setDimensions({
           width: entry.contentRect.width || 600,
           height: entry.contentRect.height || 400
@@ -351,15 +355,19 @@ export const GrafoNeon: React.FC = () => {
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
 
-    if (draggedNode && simulation) {
-      draggedNode.fx = mx;
-      draggedNode.fy = my;
-      simulation.alphaTarget(0.1).restart();
+    const arrastado = draggedRef.current;
+    const sim = lerSimulacao();
+    if (arrastado && sim) {
+      arrastado.fx = mx;
+      arrastado.fy = my;
+      sim.alphaTarget(0.1).restart();
       return;
     }
 
     let found: No | null = null;
-    for (const node of nosFisica) {
+    for (const node of lerNosFisica()) {
+      // Nó ainda não posicionado pela simulação: sem coordenadas não há o que testar.
+      if (typeof node.x !== 'number' || typeof node.y !== 'number') continue;
       const dx = node.x - mx;
       const dy = node.y - my;
       const radius = 10 + (node.energia || 0) * 12;
@@ -373,21 +381,23 @@ export const GrafoNeon: React.FC = () => {
 
   const handleMouseDown = () => {
     if (hoveredNode) {
-      const physicsNode = nosFisica.find(n => n.conceito === hoveredNode.conceito);
+      const physicsNode = lerNosFisica().find(n => n.conceito === hoveredNode.conceito);
       if (physicsNode) {
         physicsNode.fx = physicsNode.x;
         physicsNode.fy = physicsNode.y;
-        setDraggedNode(physicsNode);
+        draggedRef.current = physicsNode;
       }
     }
   };
 
   const handleMouseUp = () => {
-    if (draggedNode && simulation) {
-      draggedNode.fx = null;
-      draggedNode.fy = null;
-      simulation.alphaTarget(0);
-      setDraggedNode(null);
+    const arrastado = draggedRef.current;
+    const sim = lerSimulacao();
+    if (arrastado && sim) {
+      arrastado.fx = null;
+      arrastado.fy = null;
+      sim.alphaTarget(0);
+      draggedRef.current = null;
     }
   };
 

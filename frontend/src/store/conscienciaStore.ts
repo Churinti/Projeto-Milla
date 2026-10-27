@@ -206,7 +206,7 @@ export const useConscienciaStore = create<ConscienciaStore>((set) => ({
     isStreaming: true
   })),
 
-  finalizarPensamento: (pensamento, _deltaNivel, _novoConceito) => set((state) => {
+  finalizarPensamento: (pensamento) => set((state) => {
     // Adiciona a mensagem final de Milla na lista de chat
     const novaMensagem: MensagemChat = {
       id: `milla-${Date.now()}`,
@@ -249,14 +249,11 @@ export const useConscienciaStore = create<ConscienciaStore>((set) => ({
     const buscasCount = relatorio.buscas_realizadas || 0;
     
     // Constrói detalhamento de insights oníricos
-    let detalheInsights = "";
-    if (relatorio.insights_gerados && relatorio.insights_gerados.length > 0) {
-      detalheInsights = relatorio.insights_gerados
-        .map(i => `  • ${i.ponte} (cosseno: ${i.similaridade}): ${i.descricao}`)
-        .join("\n");
-    } else {
-      detalheInsights = "  • Nenhum novo insight sináptico estabilizado.";
-    }
+    const detalheInsights = relatorio.insights_gerados && relatorio.insights_gerados.length > 0
+      ? relatorio.insights_gerados
+          .map(i => `  • ${i.ponte} (cosseno: ${i.similaridade}): ${i.descricao}`)
+          .join("\n")
+      : "  • Nenhum novo insight sináptico estabilizado.";
 
     novasMensagens.push({
       id: `sono-relatorio-${Date.now()}`,

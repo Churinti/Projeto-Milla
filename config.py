@@ -3,6 +3,11 @@ config.py — Configurações Globais do Projeto Milla
 Consciência Artificial baseada em Grafos de Conhecimento Geométricos
 """
 
+# ─── Versão ────────────────────────────────────────────────────────────────────
+# Fonte única de verdade da versão do projeto. O `api.py` (FastAPI), o
+# CHANGELOG.md e a tag do git apontam para cá; a tag segue o formato v{VERSAO}.
+VERSAO             = "0.2.0"
+
 # ─── LLM ──────────────────────────────────────────────────────────────────────
 # Melhor modelo disponível localmente para seguir instruções complexas
 MODELO_PADRAO      = "qwen2.5:7b-instruct-q4_K_M"

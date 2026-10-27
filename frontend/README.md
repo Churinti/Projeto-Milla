@@ -1,73 +1,62 @@
-# React + TypeScript + Vite
+# Milla · Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Painel holográfico do Projeto Milla: **Vite 8 + React 19 + TypeScript**, com
+Three.js para o núcleo dodecaédrico, d3-force + Canvas 2D para o grafo de
+conceitos e Zustand para o estado global.
 
-Currently, two official plugins are available:
+> Este é o frontend do projeto — a documentação completa (arquitetura, API,
+> segurança e guia de instalação) está no [README raiz](../README.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Desenvolvimento
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm ci          # instala exatamente o package-lock.json
+npm run dev     # dev server em http://localhost:5173
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+O `vite.config.ts` faz proxy de `/api` e `/ws` para `http://127.0.0.1:8000`,
+então o backend precisa estar rodando (`python api.py` na raiz do projeto).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Scripts
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Script | O que faz |
+| :--- | :--- |
+| `npm run dev` | Dev server com HMR |
+| `npm run lint` | ESLint (regras React, React Hooks e TypeScript) |
+| `npm run build` | `tsc -b` (type-check) e depois o bundle de produção em `dist/` |
+| `npm run preview` | Serve o build de produção localmente |
+
+## Estrutura
+
 ```
+src/
+├── components/
+│   ├── AbsorcaoCognitiva.tsx   # Upload Drag & Drop de arquivos e absorção de URL
+│   ├── Dodecaedro3D.tsx        # Núcleo 3D (Three.js), reage à fase cognitiva
+│   ├── GrafoNeon.tsx           # Grafo em Canvas 2D com física d3-force
+│   ├── MetricsPanel.tsx        # HUD circular de telemetria do Self
+│   └── TerminalChat.tsx        # Console com streaming token-a-token
+├── hooks/
+│   ├── useConsciencia.ts       # Conector WebSocket tipado, com auto-reconnect
+│   └── useGrafoFisica.ts       # Simulação de física inercial d3-force
+├── store/
+│   └── conscienciaStore.ts     # Estado global (Zustand) e aplicação de deltas
+├── types/
+│   └── consciencia.ts          # Tipos compartilhados, incl. a união WSMessage
+├── App.tsx                     # Grid HUD principal
+└── index.css                   # Variáveis neon / glassmorphism
+```
+
+## Notas de implementação
+
+- **`WSMessage` é uma união discriminada.** Cada variante declara exatamente os
+  campos que o backend envia naquele `type`, então o `switch` em
+  `useConsciencia.ts` valida os payloads sem `any`.
+- **`useGrafoFisica` expõe acessores** (`lerNosFisica`, `lerArestasFisica`,
+  `lerSimulacao`) em vez dos arrays da ref: os arrays mudam a cada tick da
+  simulação, e colocá-los nas dependências de um `useEffect` dispararia o
+  efeito em loop.
+- **O nó sob arrasto vive num ref** (`GrafoNeon`), não em `useState` — mantê-lo
+  em estado re-renderizaria o canvas a cada pixel arrastado.
+- **A sincronização com a store usa `store.subscribe()`** em vez de `setState`
+  no corpo de um efeito.

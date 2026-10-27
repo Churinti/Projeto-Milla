@@ -9,6 +9,7 @@ export interface No {
   fx?: number | null;
   fy?: number | null;
   isFadingOut?: boolean; // Novo: suporte a fade-out na poda
+  fadeStartTime?: number; // Carimbo de tempo da animação de fade-out (só a UI lê/escreve)
 }
 
 export interface Aresta {
@@ -16,8 +17,9 @@ export interface Aresta {
   para: string;
   peso: number;
   tipo?: string; // normal | hifa
-  source?: any; // Usado por d3-force
-  target?: any; // Usado por d3-force
+  // O d3-force resolve estes campos: `string` antes da resolução, o próprio nó depois.
+  source?: string | No;
+  target?: string | No;
 }
 
 export interface EstadoConsciencia {
@@ -113,9 +115,47 @@ export type MessageType =
   | "chat_stream"
   | "chat_fim";
 
-export interface WSMessage {
-  type: MessageType;
-  payload: unknown;
+/** Campos comuns a toda mensagem do WebSocket. */
+interface EnvelopeWS {
   timestamp?: string;
   iteracao?: number;
 }
+
+/**
+ * Mensagem do WebSocket, discriminada por `type`.
+ *
+ * Cada variante declara exatamente os campos que o backend envia naquele tipo,
+ * o que permite ao `switch` do consumidor verificar os tipos de cada payload
+ * sem recorrer a `any`. Payloads agrupados (ex.: `absorcao_progresso` e as
+ * `ingestao_*`) compartilham o mesmo formato porque vêm do mesmo pipeline.
+ */
+export type WSMessage = EnvelopeWS & (
+  // ── Core ────────────────────────────────────────────────────────────────
+  | { type: 'ping'; payload?: Record<string, never> }
+  | { type: 'estimulo'; payload: { entrada: string } }
+  | { type: 'estado_parcial'; payload: { fase: FaseCognitiva; estado: EstadoConsciencia; nos_ativados?: string[]; token?: string } }
+  | { type: 'grafo_update'; payload: DeltaGrafo }
+  | { type: 'pensamento'; payload: { pensamento: string; delta: number; novo_conceito: string | null } }
+  | { type: 'erro'; payload: { mensagem: string } }
+
+  // ── Absorção de arquivos e URLs ─────────────────────────────────────────
+  | { type: 'absorcao_progresso' | 'ingestao_inicio' | 'ingestao_progresso' | 'ingestao_fim'
+      payload: { etapa: string; progresso: number; mensagem?: string; nos_injetados?: string[] } }
+
+  // ── Sono REM ────────────────────────────────────────────────────────────
+  | { type: 'sono_inicio'; payload: { ciclos: number } }
+  | { type: 'sono_fase'; payload: { fase: FaseCognitiva } }
+  | { type: 'sono_progresso'; payload: { fase: FaseCognitiva; mensagem: string; ciclo?: number; total?: number } }
+  | { type: 'sono_insight'; payload: { ponte: string; descricao: string } }
+  | { type: 'sono_fim'; payload: RelatorioDeSono }
+
+  // ── Curiosidade autônoma ────────────────────────────────────────────────
+  | { type: 'curiosidade_detectada'; payload: { lacunas: string[]; prioridade: string } }
+  | { type: 'curiosidade_buscando'; payload: { query: string } }
+  | { type: 'curiosidade_ingerida'; payload: { url: string; conceitos: string[] } }
+
+  // ── Chat com Dijkstra (Fase 1) ──────────────────────────────────────────
+  | { type: 'chat_caminho'; payload: { caminho: string[] } }
+  | { type: 'chat_stream'; payload: { token: string } }
+  | { type: 'chat_fim'; payload: { resposta: string } }
+);

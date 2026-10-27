@@ -3,13 +3,91 @@ import re
 import json
 import logging
 import asyncio
+import ipaddress
+import socket
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
+from urllib.parse import urljoin, urlparse, urlunparse
 from pydantic import BaseModel, Field
 
 from core.no_dodecaedrico import NoDodecaedrico
 
 logger = logging.getLogger(__name__)
+
+# Hosts que nunca podem ser alcançados a partir de uma URL que o usuário mandou.
+_HOSTS_BLOQUEADOS = {"localhost", "metadata.google.internal"}
+
+# Quantidade máxima de redirecionamentos seguidos numa única absorção.
+_MAX_REDIRECTS = 5
+
+
+def _netloc_ip(ip: str, porta: Optional[int]) -> str:
+    """Monta o `netloc` de uma URL a partir de um IP literal (IPv6 entre colchetes)."""
+    alvo = f"[{ip}]" if ":" in ip else ip
+    return f"{alvo}:{porta}" if porta else alvo
+
+
+async def validar_e_resolver_url(url: str) -> Tuple[Optional[str], List[str]]:
+    """
+    Proteção contra SSRF na absorção de URLs: valida `url` e resolve os IPs dela.
+
+    Retorna a tupla ``(erro, ips)``:
+
+    * ``erro`` — mensagem para devolver ao cliente quando a URL é recusada
+      (``None`` quando a URL é aceita);
+    * ``ips`` — endereços públicos resolvidos. O chamador precisa conectar
+      **neste** IP, mantendo o hostname original no ``Host`` e no SNI, para que
+      a checagem feita aqui seja a mesma de fato usada na conexão.
+
+    Sem isso, o ``httpx`` resolveria o hostname de novo na hora de conectar e um
+    domínio poderia responder uma IP pública na validação e uma interna no
+    fetch — o chamado *DNS rebinding*.
+
+    Sem esta checagem, qualquer pessoa com acesso à API faria o servidor
+    consultar ``127.0.0.1``, a rede local (``10.x``/``192.168.x``) ou os
+    metadados da cloud em ``169.254.169.254`` — que devolvem as credenciais da
+    máquina. O hostname é resolvido aqui e a lista inteira de IPs é checada,
+    para cobrir hostnames que resolvem para mistura de pública e interna.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return "URL inválida. Deve começar com http:// ou https://", []
+    if parsed.username or parsed.password:
+        return "URL inválida. Não são permitidas credenciais na URL.", []
+
+    host = (parsed.hostname or "").lower().rstrip(".")
+    if not host:
+        return "URL inválida. Faltou informar o host.", []
+    if host in _HOSTS_BLOQUEADOS or host.endswith((".local", ".internal")):
+        return f"URL bloqueada: o host '{host}' não é acessível de fora.", []
+
+    try:
+        porta = parsed.port or (443 if parsed.scheme == "https" else 80)
+    except ValueError:
+        return "URL inválida: porta fora do intervalo permitido.", []
+
+    # getaddrinfo bloqueia; num endpoint async rodamos o resolve no thread do event loop.
+    try:
+        resolucao = await asyncio.get_running_loop().getaddrinfo(
+            host, porta, type=socket.SOCK_STREAM
+        )
+    except (socket.gaierror, UnicodeError, ValueError, OSError):
+        return f"Não foi possível resolver o host '{host}'.", []
+
+    ips: List[str] = []
+    for item in resolucao:
+        ip = ipaddress.ip_address(item[4][0])
+        if ip.version == 6 and ip.ipv4_mapped is not None:
+            ip = ip.ipv4_mapped
+        if not ip.is_global:
+            return f"URL bloqueada: '{host}' resolve para o endereço interno {ip}.", []
+        if str(ip) not in ips:
+            ips.append(str(ip))
+
+    if not ips:
+        return f"Não foi possível resolver o host '{host}'.", []
+
+    return None, ips
 
 class FacesCognitivas(BaseModel):
     logica: float = Field(default=0.5, ge=0.0, le=1.0)
@@ -220,18 +298,64 @@ class AbsorvedorCognitivo:
         
         async with httpx.AsyncClient(
             timeout=15.0,
-            follow_redirects=True,
+            # Os redirecionamentos são seguidos à mão abaixo: cada salto passa
+            # pela mesma validação de SSRF, senão um link público que redireciona
+            # para 169.254.169.254 contornaria a checagem da URL original.
+            follow_redirects=False,
             headers=headers
         ) as client:
-            try:
-                response = await client.get(url)
-                response.raise_for_status()
-            except httpx.TimeoutException:
-                raise ValueError(f"Timeout ao acessar {url}. Site muito lento ou inacessível.")
-            except httpx.HTTPStatusError as e:
-                raise ValueError(f"Erro HTTP {e.response.status_code} ao acessar {url}")
-            except httpx.RequestError as e:
-                raise ValueError(f"Erro de conexão: {str(e)}")
+            url_atual = url
+            for _ in range(_MAX_REDIRECTS + 1):
+                erro_url, ips = await validar_e_resolver_url(url_atual)
+                if erro_url:
+                    raise ValueError(erro_url)
+
+                parsed_atual = urlparse(url_atual)
+                connection_error: Optional[Exception] = None
+                response = None
+
+                # Conecta no IP que acabou de ser validado, mantendo o hostname
+                # original no Host e no SNI (assim o certificado TLS continua
+                # sendo verificado contra o domínio). O alvo aprovado pela
+                # validação é exatamente o alvo alcançado.
+                for ip in ips:
+                    alvo = urlunparse(
+                        parsed_atual._replace(netloc=_netloc_ip(ip, parsed_atual.port))
+                    )
+                    try:
+                        response = await client.get(
+                            alvo,
+                            headers={"Host": parsed_atual.netloc},
+                            extensions={"sni_hostname": parsed_atual.hostname},
+                        )
+                        break
+                    except httpx.RequestError as e:
+                        # Falha de conexão neste IP (timeout, recusa, TLS...):
+                        # registra e tenta o próximo endereço resolvido.
+                        connection_error = e
+
+                if response is None:
+                    if isinstance(connection_error, httpx.TimeoutException):
+                        raise ValueError(
+                            f"Timeout ao acessar {url_atual}. Site muito lento ou inacessível."
+                        )
+                    raise ValueError(f"Erro de conexão: {connection_error}")
+
+                # O `raise_for_status` do httpx também estoura em 3xx, então o
+                # redirecionamento é tratado antes de validar o status.
+                if response.is_redirect:
+                    url_atual = urljoin(url_atual, response.headers["location"])
+                    continue
+
+                try:
+                    response.raise_for_status()
+                except httpx.HTTPStatusError as e:
+                    raise ValueError(
+                        f"Erro HTTP {e.response.status_code} ao acessar {url_atual}"
+                    )
+                break
+            else:
+                raise ValueError(f"Redirecionamentos demais ao acessar {url}.")
         
         # Verificar se é HTML
         content_type = response.headers.get("content-type", "")

@@ -9,6 +9,7 @@ para minimizar o payload trafegado.
 import asyncio
 import logging
 import json
+import os
 from datetime import datetime
 from typing import Dict, Any, List
 
@@ -18,7 +19,7 @@ import networkx as nx
 
 # Carrega módulos locais do core/ e engine/
 from main import ConscienciaGeometrica
-from core.absorvedor import AbsorvedorCognitivo
+from core.absorvedor import AbsorvedorCognitivo, validar_e_resolver_url
 import config
 
 # Sistema de Broadcast de WebSockets para telemetria em tempo real
@@ -44,16 +45,31 @@ logger = logging.getLogger("milla_api")
 app = FastAPI(
     title="Milla API",
     description="Servidor de suporte em tempo real para a Consciência Geométrica",
-    version="2.0.0"
+    version=config.VERSAO
 )
 
-# Habilita CORS para permitir conexões do frontend React (Vite roda na porta 5173 por padrão)
+# CORS.
+# Em desenvolvimento o Vite atende em 5173 e faz proxy de /api e /ws para cá,
+# então o navegador enxerga tudo como same-origin e CORS nem entra em jogo — as
+# origens abaixo cobrem quem aponta o frontend direto no backend. Em produção o
+# build é servido pelo próprio FastAPI (mesmo host, same-origin de novo).
+# `allow_origins=["*"]` com `allow_credentials=True` era o pior dos dois mundos:
+# o navegador rejeita `*` quando há credenciais, então nem funcionava, e liberava
+# qualquer site a falar com a API. A API não usa cookie de sessão, logo sem
+# credenciais. Origens pontuais adicionais: variável MILLA_CORS_ORIGINS.
+ORIGENS_DEV = ["http://localhost:5173", "http://127.0.0.1:5173"]
+ORIGENS_EXTRA = [
+    origem.strip()
+    for origem in os.environ.get("MILLA_CORS_ORIGINS", "").split(",")
+    if origem.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, restringe ao host do frontend
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ORIGENS_DEV + ORIGENS_EXTRA,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
 )
 
 # Instancia a consciência geométrica única
@@ -686,9 +702,13 @@ class UrlIngestaoRequest(BaseModel):
 async def absorver_url_endpoint(body: UrlIngestaoRequest):
     url = body.url.strip()
     
-    # Validação básica
-    if not url.startswith(("http://", "https://")):
-        return {"erro": "URL inválida. Deve começar com http:// ou https://"}
+    # Validação contra SSRF: sem isto o servidor buscaria qualquer URL que o
+    # cliente mandasse, inclusive endereços da rede interna ou de metadados cloud.
+    # (O IP validado aqui é re-resolvido e fixado no transporte pelo próprio
+    # absorvedor, de forma que validação e conexão usem o mesmo alvo.)
+    erro_url, _ = await validar_e_resolver_url(url)
+    if erro_url:
+        return {"erro": erro_url}
     
     absorvedor = AbsorvedorCognitivo()
     

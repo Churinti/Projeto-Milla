@@ -1,6 +1,19 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import * as d3 from 'd3';
 import type { No, Aresta } from '../types/consciencia';
+
+/** Um nó da Milla com os campos que o d3-force injeta durante a simulação. */
+export type NoFisico = No & d3.SimulationNodeDatum;
+
+/**
+ * Uma aresta da Milla. `source`/`target` chegam como string (o `id` do nó) e o
+ * `forceLink` os substitui pelo próprio objeto do nó quando resolve os links,
+ * por isso o tipo aceita as duas formas — é o mesmo contrato do d3.
+ */
+export interface ArestaFisica extends Aresta {
+  source: string | NoFisico;
+  target: string | NoFisico;
+}
 
 export const useGrafoFisica = (
   nos: No[] = [],
@@ -11,11 +24,18 @@ export const useGrafoFisica = (
   nosAtivados: string[] = [],
   onTick: () => void
 ) => {
-  const simulationRef = useRef<d3.Simulation<d3.SimulationNodeDatum, undefined> | null>(null);
-  
+  const simulationRef = useRef<d3.Simulation<NoFisico, ArestaFisica> | null>(null);
+
   // Guardamos referências persistentes dos nós para o D3 poder gerenciar a inércia física
-  const nosRef = useRef<any[]>([]);
-  const arestasRef = useRef<any[]>([]);
+  const nosRef = useRef<NoFisico[]>([]);
+  const arestasRef = useRef<ArestaFisica[]>([]);
+
+  // Os arrays nos/arestas vivem dentro dos refs, que são mutáveis: entregar
+  // `ref.current` em vez do próprio ref evita que o consumidor coloque o valor
+  // nas dependências de um efeito (o valor muda a cada frame da simulação).
+  const lerNosFisica = useCallback(() => nosRef.current, []);
+  const lerArestasFisica = useCallback(() => arestasRef.current, []);
+  const lerSimulacao = useCallback(() => simulationRef.current, []);
 
   useEffect(() => {
     try {
@@ -24,9 +44,9 @@ export const useGrafoFisica = (
       const safeNosAtivados = nosAtivados || [];
 
       // 1. Sincronização inteligente de nós
-      const nosExistentes = new Map(nosRef.current.map(n => [n.conceito, n]));
-      
-      nosRef.current = safeNos.map(n => {
+      const nosExistentes = new Map(nosRef.current.map((n) => [n.conceito, n] as const));
+
+      nosRef.current = safeNos.map((n) => {
         const existente = nosExistentes.get(n.conceito);
         if (existente) {
           return {
@@ -38,7 +58,7 @@ export const useGrafoFisica = (
             index: existente.index
           };
         }
-        
+
         const safeWidth = typeof width === 'number' && !isNaN(width) && width > 0 ? width : 600;
         const safeHeight = typeof height === 'number' && !isNaN(height) && height > 0 ? height : 400;
         return {
@@ -49,11 +69,11 @@ export const useGrafoFisica = (
       });
 
       // 2. Sincronização inteligente de arestas (Filtra arestas órfãs para imunidade absoluta contra crashes do D3)
-      const nosConceitos = new Set(safeNos.map(n => n.conceito));
-      
+      const nosConceitos = new Set(safeNos.map((n) => n.conceito));
+
       arestasRef.current = safeArestas
-        .filter(a => a && a.de && a.para && nosConceitos.has(a.de) && nosConceitos.has(a.para))
-        .map(a => {
+        .filter((a) => a && a.de && a.para && nosConceitos.has(a.de) && nosConceitos.has(a.para))
+        .map((a) => {
           return {
             de: a.de,
             para: a.para,
@@ -68,7 +88,7 @@ export const useGrafoFisica = (
       let chargeStrength = -180;
       let linkDistance = 130;
       let collideRadius = 35;
-      
+
       switch (faseCognitiva) {
         case 'streaming':
           chargeStrength = -350;
@@ -92,33 +112,38 @@ export const useGrafoFisica = (
 
       // 4. Inicializa ou Atualiza a Simulação
       if (!simulationRef.current) {
-        simulationRef.current = d3.forceSimulation<any>()
-          .force('link', d3.forceLink<any, any>().id(d => d.conceito))
-          .force('charge', d3.forceManyBody())
-          .force('center', d3.forceCenter(width / 2, height / 2))
-          .force('collide', d3.forceCollide())
+        simulationRef.current = d3
+          .forceSimulation<NoFisico, ArestaFisica>()
+          .force('link', d3.forceLink<NoFisico, ArestaFisica>().id((d) => d.conceito))
+          .force('charge', d3.forceManyBody<NoFisico>())
+          .force('center', d3.forceCenter<NoFisico>(width / 2, height / 2))
+          .force('collide', d3.forceCollide<NoFisico>())
           .on('tick', onTick);
       }
 
       const sim = simulationRef.current;
-      
+
       // Atualiza dinamicamente as forças reativas
-      sim.force('charge', d3.forceManyBody().strength(chargeStrength));
-      sim.force('collide', d3.forceCollide().radius(collideRadius));
-      
+      sim.force('charge', d3.forceManyBody<NoFisico>().strength(chargeStrength));
+      sim.force('collide', d3.forceCollide<NoFisico>().radius(collideRadius));
+
       // 1. ATUALIZA OS NÓS PRIMEIRO (Para que o D3 tenha o registro de nós pronto ao resolver os links!)
       sim.nodes(nosRef.current);
 
       // 2. CONFIGURA E ATUALIZA OS LINKS
-      const linkForce = sim.force<d3.ForceLink<any, any>>('link');
+      const linkForce = sim.force<d3.ForceLink<NoFisico, ArestaFisica>>('link');
       if (linkForce) {
         linkForce
           .distance(linkDistance)
-          .strength(d => {
-            const sourceConceito = d.source && typeof d.source === 'object' ? d.source.conceito : d.source;
-            const targetConceito = d.target && typeof d.target === 'object' ? d.target.conceito : d.target;
-            
-            const isAtivo = safeNosAtivados && (safeNosAtivados.includes(sourceConceito) || safeNosAtivados.includes(targetConceito));
+          .strength((d) => {
+            const sourceConceito =
+              d.source && typeof d.source === 'object' ? d.source.conceito : d.source;
+            const targetConceito =
+              d.target && typeof d.target === 'object' ? d.target.conceito : d.target;
+
+            const isAtivo =
+              safeNosAtivados &&
+              (safeNosAtivados.includes(sourceConceito) || safeNosAtivados.includes(targetConceito));
             const baseStrength = d.tipo === 'hifa' ? 0.2 : (d.peso || 0.5) * 0.45;
             return isAtivo ? Math.min(1.0, baseStrength * 2.2) : baseStrength;
           })
@@ -143,8 +168,8 @@ export const useGrafoFisica = (
   }, []);
 
   return {
-    nosFisica: nosRef.current,
-    arestasFisica: arestasRef.current,
-    simulation: simulationRef.current
+    lerNosFisica,
+    lerArestasFisica,
+    lerSimulacao
   };
 };
