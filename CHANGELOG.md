@@ -7,6 +7,77 @@ projeto adota [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 A versão corrente vive em `config.VERSAO` — é dali que o `api.py`, este arquivo
 e a tag do git leem.
 
+## [Não lançado]
+
+### Adicionado
+
+- **`pytest-cov` — cobertura de testes medida em todo `pytest`**, local e na
+  CI. Configuração em dois lugares com papéis distintos:
+  - **`.coveragerc`** (novo) — *o que* é medido: `source = .`, ou seja o
+    projeto inteiro, inclusive módulos que nenhum teste importa. Assim
+    `api.py` aparece no relatório com sua cobertura real em vez de sumir dele
+    (antes, o módulo nunca importado simplesmente não era reportado). Exclui
+    apenas `scratch/`, `frontend/` e entradas de script — nenhum código de
+    produto é isentado.
+  - **`pytest.ini`** — *como* roda: `--cov --cov-report=term-missing` e o piso
+    `--cov-fail-under=35`, que **falha a execução** (e portanto a CI) se a
+    cobertura total cair abaixo de 35%. É um guarda contra regressão
+    silenciosa, não uma meta de número.
+- **64 testes novos em 5 arquivos** (suíte: 5 → 69):
+  - `test_metricas.py` — o "termômetro existencial": fórmula ponderada do
+    nível, as 7 faixas qualitativas, histórico com `maxlen`, tendência e o
+    desejo que emerge da distância até a meta.
+  - `test_micelio.py` — nutrição sináptica: difusão proporcional ao peso,
+    doação global com clamp biológico [0,1], brotamento de hifas (gatilho,
+    isolados recentes, `max_hifas`, preferência por nó antigo) e o relatório
+    do ciclo vital.
+  - `test_estado_sono.py` — máquina de estados de sono e o payload
+    `sono_fase` do WebSocket.
+  - `test_pathfinding.py` — caminhos de raciocínio com subconsciente
+    mockado: filtro de similaridade > 0.4, limite de 3 conceitos, degradação
+    a `[]` quando o ChromaDB falha, Dijkstra com peso invertido (prefere
+    aresta forte), `max_hops` e extração de contexto para o prompt.
+  - `test_api_delta.py` — serialização do grafo e o delta que reduz o
+    payload do WebSocket (nós novos/modificados/removidos, tolerância de
+    0.001 na energia, normalização de direção `(A,B)` ≡ `(B,A)`, mudança de
+    tipo da aresta), além dos endpoints `GET /api/estado` e `/api/grafo` via
+    `TestClient`.
+- **`.gitignore`**: `htmlcov/`, `.coverage`, `.ruff_cache/`.
+- **README**: seção "Cobertura de testes", árvore de arquivos e tabela de
+  verificações atualizadas.
+
+### Corrigido
+
+- **Consulta de caminho com nó isolado propagava `NodeNotFound`.**
+  `PathfinderCognitivo.encontrar_caminho` monta `grafo_inv` só a partir das
+  arestas, então um conceito existente no grafo mas sem nenhuma conexão não
+  era copiado para ele — o `nx.shortest_path` lançava `NodeNotFound`, que o
+  `except` não cobria (só `NetworkXNoPath`), e a exceção escapava para o
+  chamador. Qualquer pergunta sobre um conceito isolado derrubava a consulta
+  em vez de responder "sem caminho". Agora captura as duas exceções e o caso
+  `conceito_a == conceito_b` retorna o caminho trivial `[no]` antes do
+  Dijkstra.
+
+### Cobertura
+
+| | Antes | Depois |
+| :--- | ---: | ---: |
+| Total | 31,5%* | **48,2%** |
+| `core/metricas.py` | 28,4% | **100%** |
+| `core/pathfinding.py` | 14,0% | **100%** |
+| `core/micelio.py` | 15,2% | **97,0%** |
+| `core/estado_sono.py` | 84,6% | **100%** |
+| `api.py` | não reportado | **29,7%** |
+
+\* *O "antes" é a primeira medição com o `.coveragerc` já incluindo `api.py`
+(283 stmts a 0%): sem o arquivo de configuração o número anterior de 37%
+não contava a API de jeito nenhum.*
+
+O que restou sem cobertura está concentrado em caminhos que dependem de
+serviços externos — Ollama (`engine/fusao.py`), HTTP (`core/absorvedor.py`),
+ChromaDB (`core/subconsciente.py`) — e nos endpoints WebSocket/POST da API,
+que exigem mocks de rede para serem exercitados sem servidor real.
+
 ## [0.2.0] - 2026-10-27
 
 Release de maturidade de engenharia: segurança do backend, tipagem do
@@ -113,5 +184,6 @@ Versão inicial publicada no GitHub: pipeline cognitivo completo (fusão,
 feedback, micélio, sono, curiosidade e comitê multi-agente), dashboard React
 com grafo d3-force, núcleo 3D e absorção de arquivos e URLs.
 
+[Não lançado]: https://github.com/Churinti/Projeto-Milla/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/Churinti/Projeto-Milla/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Churinti/Projeto-Milla/tree/v0.1.0

@@ -1,0 +1,38 @@
+# coverage.py — configuração da cobertura de testes do Projeto Milla.
+#
+# Este arquivo é descoberto automaticamente pelo coverage.py (e portanto pelo
+# pytest-cov); o pytest.ini só liga as flags --cov. Duas formas de rodar:
+#
+#   python -m pytest                      -> relatório no terminal (term-missing)
+#   python -m pytest --cov-report=html    -> htmlcov/index.html navegável
+#
+# O piso de cobertura (--cov-fail-under) fica no pytest.ini, junto às flags.
+
+[run]
+# Mede tudo o que existe no projeto — inclusive módulos que nenhum teste
+# importa (ex.: api.py). Assim eles aparecem com 0% no relatório em vez de
+# sumirem dele: a lacuna fica visível, que é o propósito desta medição.
+source = .
+omit =
+    scratch/*
+    test_*.py
+    frontend/*
+    TEMP/*
+    */site-packages/*
+    */__pycache__/*
+    htmlcov/*
+
+[report]
+# Imprime, ao lado do percentual, os números de linha que não executaram.
+show_missing = true
+precision = 1
+
+# Linhas que por construção não rodam em teste: ponto de entrada de script,
+# checagens de tipo só avaliadas na importação e contratos abstratos.
+# Nenhum código de produto é excluído aqui.
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @overload
+    raise NotImplementedError

@@ -14,6 +14,12 @@ __pycache__/
 *.pyc
 *.pyo
 .pytest_cache/
+.ruff_cache/
+
+# Cobertura de testes (gerado por `pytest --cov-report=html`)
+htmlcov/
+.coverage
+.coverage.*
 
 # Cache Node
 node_modules/

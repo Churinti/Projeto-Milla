@@ -51,6 +51,8 @@ class PathfinderCognitivo:
         """
         if conceito_a not in self.grafo.nodes or conceito_b not in self.grafo.nodes:
             return None
+        if conceito_a == conceito_b:
+            return [conceito_a]
         
         try:
             # Dijkstra com peso inverso da energia (nós mais energéticos = "mais curtos")
@@ -81,7 +83,11 @@ class PathfinderCognitivo:
             
             return caminho
             
-        except nx.NetworkXNoPath:
+        # NodeNotFound: nó isolado não é copiado para grafo_inv (que só nasce
+        # das arestas), então o Dijkstra nem o encontra. Sem esta captura, uma
+        # pergunta sobre um conceito isolado propagava a exceção em vez de
+        # responder "sem caminho".
+        except (nx.NetworkXNoPath, nx.NodeNotFound):
             return None
             
     def extrair_contexto_caminho(self, caminho: List[str]) -> str:

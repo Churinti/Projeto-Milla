@@ -42,9 +42,11 @@ jobs:
       - name: Verificar sintaxe de todo o código Python
         run: python -m compileall -q api.py main.py config.py core engine scratch
 
-      - name: Rodar os testes
+      - name: Rodar os testes e medir cobertura
         # O pytest.ini aponta para scratch/ e liga o asyncio_mode=auto,
-        # então `pytest` sem argumentos já roda a suíte inteira.
+        # então `pytest` sem argumentos já roda a suíte inteira. O mesmo
+        # addopts ativa o pytest-cov: relatório term-missing no log do job
+        # e o piso --cov-fail-under=35 derruba o passo se a cobertura cair.
         run: python -m pytest -v
 
   frontend:

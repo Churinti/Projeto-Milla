@@ -222,17 +222,23 @@ Projeto-Milla/
 │       ├── types/consciencia.ts     # Tipos compartilhados, incl. WSMessage
 │       ├── index.css                # Estética e variáveis neon holográficas
 │       └── App.tsx                  # Grid HUD principal do painel
-├── scratch/                    # Suíte de testes de integração (pytest)
-│   ├── test_absorvedor.py
-│   ├── test_curiosidade.py
-│   ├── test_extractor.py
-│   ├── test_homeostase.py
-│   └── test_multi_agente.py
+├── scratch/                    # Suíte de testes (pytest)
+│   ├── test_absorvedor.py      # parser resiliente do Absorvedor
+│   ├── test_api_delta.py       # serialização + delta do WebSocket, endpoints GET
+│   ├── test_curiosidade.py     # Circuit Breaker + análise de lacunas
+│   ├── test_estado_sono.py     # máquina de estados do sono
+│   ├── test_extractor.py       # extração de texto de HTML
+│   ├── test_homeostase.py      # decaimento, pruning e recall do subconsciente
+│   ├── test_micelio.py         # nutrição sináptica e brotamento de hifas
+│   ├── test_metricas.py        # termômetro existencial (nível, tendência, desejo)
+│   ├── test_multi_agente.py    # comitê de fusão multi-agente
+│   └── test_pathfinding.py     # caminhos de raciocínio (Dijkstra invertido)
 ├── api.py                      # Servidor FastAPI com WebSocket & cálculo de deltas
 ├── config.py                   # Configurações globais, thresholds e VERSAO
 ├── main.py                     # Pipeline síncrono completo no terminal
 ├── Iniciar_Milla.bat           # Orquestrador de 1 clique (Windows)
-├── pytest.ini                  # Configuração do pytest (asyncio_mode=auto)
+├── pytest.ini                  # Configuração do pytest (asyncio_mode + cobertura)
+├── .coveragerc                 # O que a cobertura mede e o que ela isenta
 ├── CHANGELOG.md                # Histórico de versões
 ├── LICENSE                     # MIT
 └── requirements.txt            # Dependências Python
@@ -269,6 +275,7 @@ Milla conta com um **Dashboard Cibernético Holográfico** integrado em tempo re
 *   **pypdf & python-docx** (Leitura e extração de texto de arquivos PDF e Word)
 *   **Pydantic** (Validação estruturada dos schemas de faces cognitivas extraídas pelo LLM)
 *   **pytest & pytest-asyncio** (Suíte de testes em `scratch/`)
+*   **pytest-cov** (Cobertura de código medida em todo `pytest`, local e na CI)
 
 ### Frontend
 *   **Vite 8 + React 19 + TypeScript** (Bootstrap e modularização de ponta)
@@ -378,11 +385,14 @@ A esteira roda automaticamente em cada push e pull request
 ([`.github/workflows/ci.yml`](./.github/workflows/ci.yml)). Localmente:
 
 ```bash
-# Backend: 5 testes de integração em scratch/
+# Backend: suíte completa + relatório de cobertura
 python -m pytest -v
 
 # Backend: lint
 ruff check .
+
+# Backend: relatório de cobertura em HTML (abrir htmlcov/index.html)
+python -m pytest --cov-report=html
 
 # Frontend: lint
 cd frontend && npm run lint
@@ -394,7 +404,8 @@ cd frontend && npm run build
 | Verificação | Comando | O que cobre |
 | :--- | :--- | :--- |
 | Lint Python | `ruff check .` | imports mortos, variáveis sem uso, f-strings e sintaxe (regras em [`ruff.toml`](./ruff.toml)) |
-| Testes Python | `python -m pytest` | absorvedor, curiosidade, extractor, homeostase, comitê multi-agente |
+| Testes Python | `python -m pytest` | absorvedor, API (delta + endpoints), curiosidade, estado de sono, extractor, homeostase, micélio, métricas, comitê multi-agente e pathfinding |
+| Cobertura | automática no `pytest` | relatório `term-missing` + piso de 35% (config. em [`.coveragerc`](./.coveragerc)) |
 | Sintaxe Python | `python -m compileall .` | todos os módulos `core/`, `engine/` e da raiz |
 | Lint | `npm run lint` | ESLint com regras React, React Hooks e TypeScript |
 | Type-check | `tsc -b` (roda no `build`) | tipos do WebSocket, da física d3 e da store Zustand |
@@ -403,6 +414,31 @@ cd frontend && npm run build
 > **Nota sobre testes assíncronos:** os testes são `async def`. O `pytest.ini`
 > liga `asyncio_mode = auto`, então não é preciso marcar cada função com
 > `@pytest.mark.asyncio`.
+
+### Cobertura de testes
+
+A cobertura roda **em todo `pytest`** — local e na CI — via `pytest-cov`:
+
+```bash
+python -m pytest               # relatório term-missing no terminal
+python -m pytest --cov-report=html   # htmlcov/index.html navegável
+```
+
+*   **O que é medido:** o projeto inteiro (`source = .` no [`.coveragerc`](./.coveragerc)),
+    inclusive módulos que nenhum teste importa — `api.py` aparece com sua
+    cobertura real em vez de sumir do relatório.
+*   **O que é isento:** apenas `scratch/` (os próprios testes), `frontend/` e
+    entradas de script (`if __name__ == "__main__"`). Nenhum código de produto
+    é excluído para inflar o número.
+*   **Piso:** `--cov-fail-under=35` no `pytest.ini` faz a CI **falhar** se a
+    cobertura total cair abaixo de 35%. É um guarda contra regressão silenciosa,
+    não uma meta de número.
+*   **Estado atual: ~48%** com a suíte inteira passando. Os módulos puros do
+    núcleo cognitivo (`metricas`, `pathfinding`, `estado_sono`, `micélio`,
+    `no_dodecaedrico`, `config`) estão a 100% — os trechos sem cobertura estão
+    concentrados nos caminhos que dependem de serviços externos (Ollama, HTTP,
+    ChromaDB) e nos endpoints WebSocket/POST da API, que exigem mocks de rede
+    para serem testados sem um servidor de verdade.
 
 ---
 
@@ -560,8 +596,9 @@ O histórico completo fica em [CHANGELOG.md](./CHANGELOG.md).
 ### Roadmap
 - [x] Code-splitting do bundle de produção (805 kB → 255 kB no primeiro load)
 - [x] Linter de Python (ruff) e checagem na CI
+- [x] Cobertura de testes (`pytest-cov`, piso de 35% na CI)
 - [ ] Autenticação para uso em rede local
-- [ ] Cobertura de testes (`pytest-cov`) e testes de frontend
+- [ ] Testes de frontend (Vitest + Testing Library)
 - [ ] Persistência do grafo ativo sem serialização por ciclo
 - [ ] Modo dockerizado (imagem única com Ollama embutido)
 
