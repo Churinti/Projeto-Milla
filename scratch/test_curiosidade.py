@@ -4,14 +4,11 @@
 import sys
 import os
 import asyncio
-import numpy as np
 
 # Adiciona o diretório raiz ao path para poder importar core
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from core.curiosidade import CircuitBreaker, MotorCuriosidade
-from core.estado_sono import EstadoSono, FaseSono
-from core.no_dodecaedrico import NoDodecaedrico
 from main import ConscienciaGeometrica
 from core.absorvedor import AbsorvedorCognitivo
 
@@ -63,8 +60,8 @@ async def test_motor_curiosidade_lacunas():
     
     lacunas = await motor.analisar_lacunas()
     print(f"Lacunas detectadas: {len(lacunas)}")
-    for l in lacunas:
-        print(f" - Tipo: {l['tipo']}, Prioridade: {l['prioridade']:.3f}, Nós: {l['no_a']} e {l.get('no_b')}")
+    for lacuna in lacunas:
+        print(f" - Tipo: {lacuna['tipo']}, Prioridade: {lacuna['prioridade']:.3f}, Nós: {lacuna['no_a']} e {lacuna.get('no_b')}")
         
     assert len(lacunas) > 0, "Deveria detectar pelo menos uma lacuna"
     

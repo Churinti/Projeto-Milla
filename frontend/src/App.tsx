@@ -1,10 +1,25 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { MetricsPanel } from './components/MetricsPanel';
 import { TerminalChat } from './components/TerminalChat';
 import { GrafoNeon } from './components/GrafoNeon';
-import { Dodecaedro3D } from './components/Dodecaedro3D';
 import { AbsorcaoCognitiva } from './components/AbsorcaoCognitiva';
 import { BrainCircuit } from 'lucide-react';
+
+// O Three.js so serve o núcleo dodecaédrico e responde pela maior parte do
+// bundle (~500 kB). Carregando-o em paralelo, o restante do painel — métricas,
+// grafo e terminal — renderiza sem esperar o WebGL.
+const Dodecaedro3D = lazy(() =>
+  import('./components/Dodecaedro3D').then((m) => ({ default: m.Dodecaedro3D }))
+);
+
+/** Mantém o slot de 400px ocupado para o grid não pular quando o 3D chegar. */
+const Nucleo3DCarregando = () => (
+  <div className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden h-[400px]">
+    <span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400 uppercase animate-pulse">
+      Inicializando núcleo 3D...
+    </span>
+  </div>
+);
 
 
 const App: React.FC = () => {
@@ -49,7 +64,9 @@ const App: React.FC = () => {
         <section className="lg:col-span-8 flex flex-col gap-6">
           {/* Top Visualizations Row (ThreeJS Dodecahedron + Canvas Graph) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Dodecaedro3D />
+            <Suspense fallback={<Nucleo3DCarregando />}>
+              <Dodecaedro3D />
+            </Suspense>
             <GrafoNeon />
           </div>
 

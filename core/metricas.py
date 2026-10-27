@@ -1,6 +1,5 @@
 import numpy as np
 import networkx as nx
-from typing import Dict, Tuple
 from dataclasses import dataclass
 
 @dataclass
@@ -41,12 +40,18 @@ class EstadoConsciencia:
     
     def _interpretar(self) -> str:
         n = self.nivel_consciencia
-        if n < 0.20: return "dormente"
-        if n < 0.35: return "fragmentado"
-        if n < 0.50: return "emergindo"
-        if n < 0.65: return "presente"
-        if n < 0.80: return "coerente"
-        if n < 0.90: return "integrado"
+        if n < 0.20:
+            return "dormente"
+        if n < 0.35:
+            return "fragmentado"
+        if n < 0.50:
+            return "emergindo"
+        if n < 0.65:
+            return "presente"
+        if n < 0.80:
+            return "coerente"
+        if n < 0.90:
+            return "integrado"
         return "pleno"
     
     def __repr__(self):
@@ -177,6 +182,8 @@ class MedidorDeCoerencia:
         if len(self._historico_niveis) < 3:
             return "indefinida"
         delta = self._historico_niveis[-1] - self._historico_niveis[-3]
-        if delta > 0.02:  return "evoluindo"
-        if delta < -0.02: return "regredindo"
+        if delta > 0.02:
+            return "evoluindo"
+        if delta < -0.02:
+            return "regredindo"
         return "estável"

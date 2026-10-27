@@ -27,7 +27,6 @@ from core.pathfinding import PathfinderCognitivo
 from core.micelio import MicelioMilla
 import config
 import asyncio
-import random
 from core.estado_sono import EstadoSono, FaseSono
 from core.curiosidade import MotorCuriosidade
 from core.absorvedor import AbsorvedorCognitivo
@@ -406,7 +405,6 @@ class ConscienciaGeometrica:
         if callback:
             await callback(self.estado_sono.transicionar(FaseSono.CONSOLIDACAO))
         
-        nos_antes = len(self.grafo.nodes)
         removidos = self._pruning_por_energia(threshold=0.15)  # mais agressivo no sono
         relatorio["nos_arquivados"] = len(removidos)
         
@@ -433,7 +431,7 @@ class ConscienciaGeometrica:
                         await callback({
                             "type": "curiosidade_detectada",
                             "payload": {
-                                "lacunas": [l['tipo'] for l in lacunas],
+                                "lacunas": [lacuna['tipo'] for lacuna in lacunas],
                                 "prioridade": lacunas[0]['no_a']
                             }
                         })

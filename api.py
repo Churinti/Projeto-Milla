@@ -11,10 +11,11 @@ import logging
 import json
 import os
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import List
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import networkx as nx
 
 # Carrega módulos locais do core/ e engine/
@@ -658,7 +659,7 @@ async def absorver_conhecimento(file: UploadFile = File(...)):
                 "timestamp": datetime.now().isoformat()
             })
             
-            logger.info(f"[Absorção] Delta do Grafo transmitido após injeção bem-sucedida.")
+            logger.info("[Absorção] Delta do Grafo transmitido após injeção bem-sucedida.")
 
             # 4. Aciona o Ciclo Vital Micelial com os nós recém-injetados
             #    O micélio distribuirá energia dos hubs antigos para os novos nós
@@ -692,8 +693,6 @@ async def absorver_conhecimento(file: UploadFile = File(...)):
 
 
 # ─── Endpoint de Ingestão Web (Web RAG) ──────────────────────────────────────
-
-from pydantic import BaseModel
 
 class UrlIngestaoRequest(BaseModel):
     url: str

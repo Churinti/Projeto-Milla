@@ -1,9 +1,22 @@
 import { useEffect, useRef, useCallback } from 'react';
-import * as d3 from 'd3';
+// Só a simulação de força é usada aqui. Importar o pacote- guarda-chuva `d3`
+// (que reexporta ~25 bibliotecas e não declara `sideEffects`) arrasta tudo junto.
+import {
+  forceCenter,
+  forceCollide,
+  forceLink,
+  forceManyBody,
+  forceSimulation
+} from 'd3-force';
+import type {
+  ForceLink,
+  Simulation,
+  SimulationNodeDatum
+} from 'd3-force';
 import type { No, Aresta } from '../types/consciencia';
 
 /** Um nó da Milla com os campos que o d3-force injeta durante a simulação. */
-export type NoFisico = No & d3.SimulationNodeDatum;
+export type NoFisico = No & SimulationNodeDatum;
 
 /**
  * Uma aresta da Milla. `source`/`target` chegam como string (o `id` do nó) e o
@@ -24,7 +37,7 @@ export const useGrafoFisica = (
   nosAtivados: string[] = [],
   onTick: () => void
 ) => {
-  const simulationRef = useRef<d3.Simulation<NoFisico, ArestaFisica> | null>(null);
+  const simulationRef = useRef<Simulation<NoFisico, ArestaFisica> | null>(null);
 
   // Guardamos referências persistentes dos nós para o D3 poder gerenciar a inércia física
   const nosRef = useRef<NoFisico[]>([]);
@@ -112,26 +125,25 @@ export const useGrafoFisica = (
 
       // 4. Inicializa ou Atualiza a Simulação
       if (!simulationRef.current) {
-        simulationRef.current = d3
-          .forceSimulation<NoFisico, ArestaFisica>()
-          .force('link', d3.forceLink<NoFisico, ArestaFisica>().id((d) => d.conceito))
-          .force('charge', d3.forceManyBody<NoFisico>())
-          .force('center', d3.forceCenter<NoFisico>(width / 2, height / 2))
-          .force('collide', d3.forceCollide<NoFisico>())
+        simulationRef.current = forceSimulation<NoFisico, ArestaFisica>()
+          .force('link', forceLink<NoFisico, ArestaFisica>().id((d) => d.conceito))
+          .force('charge', forceManyBody<NoFisico>())
+          .force('center', forceCenter<NoFisico>(width / 2, height / 2))
+          .force('collide', forceCollide<NoFisico>())
           .on('tick', onTick);
       }
 
       const sim = simulationRef.current;
 
       // Atualiza dinamicamente as forças reativas
-      sim.force('charge', d3.forceManyBody<NoFisico>().strength(chargeStrength));
-      sim.force('collide', d3.forceCollide<NoFisico>().radius(collideRadius));
+      sim.force('charge', forceManyBody<NoFisico>().strength(chargeStrength));
+      sim.force('collide', forceCollide<NoFisico>().radius(collideRadius));
 
       // 1. ATUALIZA OS NÓS PRIMEIRO (Para que o D3 tenha o registro de nós pronto ao resolver os links!)
       sim.nodes(nosRef.current);
 
       // 2. CONFIGURA E ATUALIZA OS LINKS
-      const linkForce = sim.force<d3.ForceLink<NoFisico, ArestaFisica>>('link');
+      const linkForce = sim.force<ForceLink<NoFisico, ArestaFisica>>('link');
       if (linkForce) {
         linkForce
           .distance(linkDistance)

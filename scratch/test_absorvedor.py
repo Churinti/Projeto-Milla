@@ -43,14 +43,6 @@ async def main():
     # 3. Teste de Parsing de Resposta do LLM com Fallbacks
     print("\n[3/3] Testando resiliência do parser do Ollama/OpenAI JSON...")
     
-    # Mock do objeto de fusão
-    class MockNucleo:
-        def __init__(self):
-            self.usar_ollama = True
-            self.modelo = "qwen2.5:7b-instruct-q4_K_M"
-            
-    mock_nucleo = MockNucleo()
-    
     # Mock do teste de regex/parsing
     # Vamos rodar a lógica interna de parsing em strings mocks direto para validar a robustez do absorvedor
     respostas_malformadas = [
@@ -66,7 +58,8 @@ async def main():
     for idx, resp in enumerate(respostas_malformadas):
         # Usamos uma função local mockada que apenas parseia a resposta exatamente como no core
         dados = None
-        import re, json
+        import re
+        import json
         for tentativa in [
             lambda t: json.loads(t),
             lambda t: json.loads(re.search(r'\{.*\}', t, re.DOTALL).group()),

@@ -16,6 +16,7 @@ pydantic>=2.0.0        # Validação estruturada de schemas e JSON do Ollama
 httpx>=0.27.0          # Requisições assíncronas (absorção web e curiosidade)
 beautifulsoup4>=4.12.3 # Limpeza de HTML na Absorção Web Direta (MillaBot)
 
-# --- Testes (pytest.ini em vez de pytest.mark.asyncio) ---
-pytest>=8.0            # roda os testes em scratch/
-pytest-asyncio>=0.24   # suporte aos testes async def (asyncio_mode=auto)
+# --- Testes e qualidade ---
+pytest>=8.0            # roda os testes em scratch/ (pytest.ini, asyncio_mode=auto)
+pytest-asyncio>=0.24   # suporte aos testes async def
+ruff>=0.8              # linter de Python — conjunto de regras fixado em ruff.toml

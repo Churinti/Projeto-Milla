@@ -136,7 +136,7 @@ class MotorCuriosidade:
                     pass
         
         # Ordena por prioridade e retorna top 3
-        lacunas.sort(key=lambda l: l['prioridade'], reverse=True)
+        lacunas.sort(key=lambda lacuna: lacuna['prioridade'], reverse=True)
         return lacunas[:3]
     
     def _formular_query(self, lacuna: dict) -> str:

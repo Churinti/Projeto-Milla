@@ -381,6 +381,9 @@ A esteira roda automaticamente em cada push e pull request
 # Backend: 5 testes de integração em scratch/
 python -m pytest -v
 
+# Backend: lint
+ruff check .
+
 # Frontend: lint
 cd frontend && npm run lint
 
@@ -390,6 +393,7 @@ cd frontend && npm run build
 
 | Verificação | Comando | O que cobre |
 | :--- | :--- | :--- |
+| Lint Python | `ruff check .` | imports mortos, variáveis sem uso, f-strings e sintaxe (regras em [`ruff.toml`](./ruff.toml)) |
 | Testes Python | `python -m pytest` | absorvedor, curiosidade, extractor, homeostase, comitê multi-agente |
 | Sintaxe Python | `python -m compileall .` | todos os módulos `core/`, `engine/` e da raiz |
 | Lint | `npm run lint` | ESLint com regras React, React Hooks e TypeScript |
@@ -554,9 +558,10 @@ A versão corrente é **0.2.0**, declarada em `config.VERSAO` (lida pelo
 O histórico completo fica em [CHANGELOG.md](./CHANGELOG.md).
 
 ### Roadmap
-- [ ] Code-splitting do bundle de produção (~805 kB)
+- [x] Code-splitting do bundle de produção (805 kB → 255 kB no primeiro load)
+- [x] Linter de Python (ruff) e checagem na CI
 - [ ] Autenticação para uso em rede local
-- [ ] Linter de Python (ruff) e cobertura de testes
+- [ ] Cobertura de testes (`pytest-cov`) e testes de frontend
 - [ ] Persistência do grafo ativo sem serialização por ciclo
 - [ ] Modo dockerizado (imagem única com Ollama embutido)
 

@@ -49,6 +49,10 @@ frontend, suíte de testes executável de verdade e primeira esteira de CI.
 - **`CHANGELOG.md`** (este arquivo).
 - **`config.VERSAO`** — fonte única de verdade da versão; `api.py`,
   `frontend/package.json` e a tag `v0.2.0` apontam para ela.
+- **`ruff.toml`** — linter de Python com o conjunto de regras fixado
+  explicitamente (`E4`, `E7`, `E9`, `F`) para que uma mudança de default numa
+  versão futura não altere o que a CI valida. O `ruff` entrou também no
+  `requirements.txt` e num passo da esteira.
 
 ### Corrigido
 
@@ -73,20 +77,35 @@ frontend, suíte de testes executável de verdade e primeira esteira de CI.
 
 ### Melhorado
 
+- **Bundle de produção: 805 kB → 255 kB no primeiro load** (gzip 222 → 81 kB).
+  Duas causas atacadas:
+  1. O **Three.js** — de longe a maior dependência — saiu do bundle inicial.
+     O núcleo dodecaédrico agora é carregado em paralelo via `React.lazy`, com
+     um fallback que ocupa o mesmo slot de 400 px para o grid não pular.
+  2. O `d3` guarda-chuva (que reexporta ~25 bibliotecas e **não declara
+     `sideEffects`**, então o bundler não podia descartar nada) foi trocado por
+     `d3-force`, a única parte que o código usa. `d3` e `@types/d3` saíram das
+     dependências.
 - **28 erros de ESLint → 0.** Cada um corrigido pela causa, não suprimido:
   `payload: any` do WebSocket virou união discriminada (`WSMessage`) em que cada
   variante declara os campos que o backend envia; `useRef<any[]>` na física do
   grafo virou `NoFisico`/`ArestaFisica` tipados com exposição de acessores
   estáveis (`lerNosFisica`/`lerArestasFisica`/`lerSimulacao`) em vez de o
   consumidor ler a ref na renderização.
+- **Ruff: 32 achados → 0**, todos corrigidos no código e nenhum suprimido:
+  13 imports mortos, 8 instruções na mesma linha, 3 variáveis atribuídas e nunca
+  lidas (uma delas, `nos_antes` em `main.py`, era de um relatório de sono), 3
+  f-strings sem placeholder, 3 nomes ambíguos (`l`), um import fora do topo e um
+  import múltiplo na mesma linha.
 - **Testes Python: 4 falhando → 5 passando.**
 - `Iniciar_Milla.bat`, README e documentação interna atualizados.
 
 ### Limitações conhecidas
 
-- O bundle de produção ficou em ~805 kB (aviso do Vite sobre chunks > 500 kB);
-  ainda não passou por code-splitting.
-- Não há linter de Python configurado no repositório.
+- O chunk assíncrono do Three.js ficou em 517 kB e ainda acusa o aviso de
+  tamanho do Vite — é o preço de manter o WebGL fora do primeiro load.
+- Não há cobertura de testes (`pytest-cov`) nem testes de frontend.
+- Não há autenticação: Milla é um protótipo para rodar na sua máquina.
 
 ## [0.1.0] - 2026-05-18
 

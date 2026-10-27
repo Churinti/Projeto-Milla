@@ -35,6 +35,10 @@ jobs:
       - name: Instalar dependências
         run: pip install -r requirements.txt
 
+      - name: Lint (ruff)
+        # Regras fixadas em ruff.toml — nenhuma supressão na configuração.
+        run: python -m ruff check .
+
       - name: Verificar sintaxe de todo o código Python
         run: python -m compileall -q api.py main.py config.py core engine scratch
 

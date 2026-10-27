@@ -19,7 +19,6 @@ from datetime import datetime, timedelta
 sys.path.append(".")
 
 from main import ConscienciaGeometrica
-from core.no_dodecaedrico import NoDodecaedrico
 from core.subconsciente import SubconscienteMilla
 
 
@@ -89,7 +88,7 @@ def test_homeostasis():
     milla.grafo.clear()
     
     # Set up two connected concepts
-    a_no = milla.instanciar_conceito("ConceitoA", {"logica": 0.6, "abstracao": 0.6}, origem="absorcao")
+    milla.instanciar_conceito("ConceitoA", {"logica": 0.6, "abstracao": 0.6}, origem="absorcao")
     b_no = milla.instanciar_conceito("ConceitoB", {"logica": 0.6, "abstracao": 0.6}, origem="absorcao")
     
     # Clear auto connections and add only our target edge

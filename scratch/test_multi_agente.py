@@ -38,7 +38,7 @@ async def test_pipeline_multi_agente():
                 }
     
     from engine.fusao_multi_agente import (
-        AgenteExtrator, AgenteCritico, AgenteTopologico, PipelineMultiAgente
+        AgenteCritico, AgenteTopologico, PipelineMultiAgente
     )
     
     mock_nucleo = MockNucleo()
@@ -107,7 +107,7 @@ async def test_pipeline_multi_agente():
         
         assert not genericos_passaram, \
             f"FALHA: termos genéricos passaram o filtro: {genericos_passaram}"
-        print(f"[OK] Nenhum termo genérico passou o filtro")
+        print("[OK] Nenhum termo genérico passou o filtro")
         
         # Verifica conceitos quânticos capturados
         conceitos_quanticos = [c for c in conceitos if any(
@@ -122,7 +122,7 @@ async def test_pipeline_multi_agente():
         for c in conceitos:
             assert len(c.get('faces', {})) == 12, \
                 f"FALHA: {c['nome']} tem {len(c.get('faces', {}))} faces"
-        print(f"[OK] Todas as faces dodecaédricas estão completas")
+        print("[OK] Todas as faces dodecaédricas estão completas")
         
     except Exception as e:
         print(f"[AVISO] Teste com Ollama real pulado ou falhou: {e}")
