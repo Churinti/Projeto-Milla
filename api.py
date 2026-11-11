@@ -10,17 +10,31 @@ import asyncio
 import logging
 import json
 import os
+from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 from typing import List
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import networkx as nx
 
 # Carrega módulos locais do core/ e engine/
-from main import ConscienciaGeometrica
+from main import ConscienciaGeometrica, semear_conceitos
 from core.absorvedor import AbsorvedorCognitivo, validar_e_resolver_url
+from core.auth import (
+    PROTOCOLO_WS,
+    acesso_autorizado,
+    autenticacao_ativa,
+    erro_de_configuracao,
+    host_do_cliente,
+    mensagem_de_recusa,
+    token_do_cabecalho,
+    token_do_websocket,
+)
 import config
 
 # Sistema de Broadcast de WebSockets para telemetria em tempo real
@@ -43,11 +57,85 @@ logging.basicConfig(
 )
 logger = logging.getLogger("milla_api")
 
+
+@asynccontextmanager
+async def ciclo_vida(_app: FastAPI):
+    """Desligamento gracioso: grava o snapshot pendente antes de fechar."""
+    yield
+    milla.persistencia.salvar_agora()
+
+
 app = FastAPI(
     title="Milla API",
     description="Servidor de suporte em tempo real para a Consciência Geométrica",
-    version=config.VERSAO
+    version=config.VERSAO,
+    lifespan=ciclo_vida,
 )
+
+# ─── Painel compilado (modo contêiner) ────────────────────────────────────────
+# Fora do desenvolvimento não existe o servidor do Vite: o `npm run build` roda
+# no estágio de compilação da imagem e o FastAPI entrega `frontend/dist` no
+# mesmo porto, então painel, REST e WebSocket ficam na mesma origem — sem CORS
+# e sem proxy. Na máquina de desenvolvimento a pasta pode não existir; aí as
+# rotas do painel não são registradas e o Vite continua no comando.
+PASTA_PAINEL = Path(__file__).parent / "frontend" / "dist"
+PAINEL_DISPONIVEL = PASTA_PAINEL.is_dir()
+
+# Token inválido no ambiente derruba todo acesso em `acesso_autorizado` (falha
+# fechada); avisamos no log para o dono perceber antes de tentar entrar.
+_erro_token = erro_de_configuracao()
+if _erro_token:
+    logger.error("[Auth] %s", _erro_token)
+
+
+# ─── Controle de Acesso ──────────────────────────────────────────────────────
+
+# As rotas abaixo só entregam arquivo ou documentação; nenhuma executa ação.
+# A lista é fechada de propósito: uma rota nova fora dela nasce protegida.
+# `/api/auth/status` existe para o painel descobrir se precisa pedir senha.
+CAMINHOS_PUBLICOS = {
+    "/", "/favicon.svg", "/icons.svg",
+    "/docs", "/openapi.json", "/redoc",
+    "/api/auth/status",
+}
+PREFIXOS_PUBLICOS = ("/assets/",)
+
+
+def acesso_publico(caminho: str) -> bool:
+    """Diz se o caminho é conteúdo estático/documentação (sem ação nenhuma)."""
+    return caminho in CAMINHOS_PUBLICOS or caminho.startswith(PREFIXOS_PUBLICOS)
+
+
+@app.middleware("http")
+async def proteger_acesso(request: Request, call_next):
+    """
+    Aplica a política de `core/auth.py` a toda a API.
+
+    Definido antes do CORS de propósito: o último middleware registrado fica
+    por fora, então as recusas daqui ainda saem com os cabeçalhos de CORS.
+    """
+    # Preflight do CORS não carrega token nem executa nada.
+    if request.method == "OPTIONS" or acesso_publico(request.url.path):
+        return await call_next(request)
+
+    peer = request.client.host if request.client else None
+    host = host_do_cliente(peer, request.headers.get("x-forwarded-for"))
+    token = token_do_cabecalho(request.headers.get("authorization"))
+
+    if acesso_autorizado(host, token):
+        return await call_next(request)
+
+    autenticada = autenticacao_ativa()
+    logger.warning(
+        "[Auth] Acesso recusado para %s em %s %s",
+        host, request.method, request.url.path,
+    )
+    return JSONResponse(
+        status_code=401 if autenticada else 403,
+        content={"erro": mensagem_de_recusa(host)},
+        headers={"WWW-Authenticate": "Bearer"} if autenticada else None,
+    )
+
 
 # CORS.
 # Em desenvolvimento o Vite atende em 5173 e faz proxy de /api e /ws para cá,
@@ -73,39 +161,37 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 
-# Instancia a consciência geométrica única
+# Instancia a consciência geométrica única. O grafo ativo é restaurado do
+# snapshot em disco quando existe; caso contrário nasce vazio e é semeado.
 milla = ConscienciaGeometrica()
 
-# Semeando a realidade da IA com nós fundamentais
-logger.info("Semeando conceitos iniciais...")
-milla.instanciar_conceito("Humano", {
-    "logica": 0.7, "emocao_simulada": 0.9,
-    "temporalidade": 0.8, "abstracao": 0.6,
-})
-milla.instanciar_conceito("Codigo", {
-    "logica": 1.0, "emocao_simulada": 0.1,
-    "temporalidade": 0.3, "abstracao": 0.7,
-})
-milla.instanciar_conceito("Geometria", {
-    "logica": 0.9, "emocao_simulada": 0.2,
-    "temporalidade": 0.1, "abstracao": 1.0,
-})
-milla.instanciar_conceito("Consciencia", {
-    "logica": 0.6, "emocao_simulada": 0.8,
-    "temporalidade": 0.7, "abstracao": 0.95,
-})
-milla.instanciar_conceito("Tempo", {
-    "logica": 0.5, "emocao_simulada": 0.6,
-    "temporalidade": 1.0, "abstracao": 0.8,
-})
-milla.instanciar_conceito("Identidade", {
-    "logica": 0.4, "emocao_simulada": 0.85,
-    "temporalidade": 0.6, "abstracao": 0.9,
-})
-milla.instanciar_conceito("Paradoxo", {
-    "logica": 0.3, "emocao_simulada": 0.7,
-    "temporalidade": 0.4, "abstracao": 0.95,
-})
+if milla.carregar_estado():
+    logger.info(
+        "Grafo ativo restaurado: %d nós, %d arestas.",
+        milla.grafo.number_of_nodes(),
+        milla.grafo.number_of_edges(),
+    )
+else:
+    logger.info(
+        "Nenhum snapshot válido em '%s'; semeando conceitos iniciais...",
+        config.ARQUIVO_GRAFO,
+    )
+
+# Garante os conceitos fundamentais (em snapshots antigos eles podem faltar).
+if semear_conceitos(milla):
+    milla.persistencia.marcar_sujo()
+
+
+def persistir_grafo() -> None:
+    """
+    Marca o grafo como alterado e grava apenas se o intervalo passou.
+
+    Chamado ao fim dos fluxos que mexem no grafo (estímulo, sono, absorção,
+    chat). Serializar é O(nós) e acontece no máximo uma vez por intervalo —
+    nunca a cada ciclo.
+    """
+    milla.persistencia.marcar_sujo()
+    milla.persistencia.talvez_salvar()
 
 
 # ─── Auxiliares de Serialização e Delta de Grafo ─────────────────────────────
@@ -197,6 +283,28 @@ def calcular_delta_grafo(grafo_antes: dict, grafo_depois: dict) -> dict:
 
 # ─── Endpoints REST Básicos ──────────────────────────────────────────────────
 
+@app.get("/api/auth/status")
+def status_autenticacao(request: Request):
+    """
+    Diz ao painel se a instância exige token e se esta requisição está
+    autorizada. É o único endpoint sempre alcançável: é ele que permite ao
+    frontend escolher entre o login, o dashboard ou a explicação do bloqueio.
+    """
+    peer = request.client.host if request.client else None
+    host = host_do_cliente(peer, request.headers.get("x-forwarded-for"))
+    token = token_do_cabecalho(request.headers.get("authorization"))
+    autorizado = acesso_autorizado(host, token)
+
+    corpo = {
+        "autenticacao_ativa": autenticacao_ativa(),
+        "autenticado": autorizado,
+        "protocolo_ws": PROTOCOLO_WS,
+    }
+    if not autorizado:
+        corpo["erro"] = mensagem_de_recusa(host)
+    return corpo
+
+
 @app.get("/api/estado")
 def obter_estado():
     """Retorna o estado de consciência geral atual."""
@@ -237,7 +345,25 @@ async def keepalive(websocket: WebSocket):
 
 @app.websocket("/ws/consciencia")
 async def websocket_consciencia(websocket: WebSocket):
-    await websocket.accept()
+    peer = websocket.client.host if websocket.client else None
+    host = host_do_cliente(peer, websocket.headers.get("x-forwarded-for"))
+    token = token_do_websocket(websocket.headers.get("sec-websocket-protocol"))
+
+    if not acesso_autorizado(host, token):
+        # Fecha antes do accept: o handshake falha em vez de abrir um canal
+        # que só seria barrado depois. 1008 = política violada.
+        logger.warning("[WebSocket] Handshake recusado para %s.", host)
+        await websocket.close(code=1008)
+        return
+
+    solicitados = [
+        p.strip()
+        for p in websocket.headers.get("sec-websocket-protocol", "").split(",")
+        if p.strip()
+    ]
+    await websocket.accept(
+        subprotocol=PROTOCOLO_WS if PROTOCOLO_WS in solicitados else None
+    )
     active_connections.append(websocket)
     logger.info("[WebSocket] Conexão ativa recebida no dashboard holográfico.")
 
@@ -318,6 +444,7 @@ async def websocket_consciencia(websocket: WebSocket):
                                 "payload": delta,
                                 "timestamp": datetime.now().isoformat()
                             })
+                            persistir_grafo()
                     
                     try:
                         relatorio = await milla.dormir(
@@ -330,6 +457,7 @@ async def websocket_consciencia(websocket: WebSocket):
                             "payload": relatorio,
                             "timestamp": datetime.now().isoformat()
                         })
+                        persistir_grafo()
                     except Exception as e:
                         logger.error(f"[WS Sono Background] Erro: {e}", exc_info=True)
                         await broadcast({
@@ -485,6 +613,9 @@ async def websocket_consciencia(websocket: WebSocket):
                             "timestamp": datetime.now().isoformat(),
                             "iteracao": milla.iteracao
                         })
+
+                        # O ciclo terminou: energia, ativações e poda mudaram.
+                        persistir_grafo()
                     except Exception as e:
                         logger.error(f"[WS] Erro ao processar estimulo: {e}", exc_info=True)
                         try:
@@ -517,6 +648,8 @@ async def websocket_consciencia(websocket: WebSocket):
                         
                         # Se evocamos nós do subconsciente, enviamos um update para renderizar antes do caminho
                         if delta_grafo["nos_novos"] or delta_grafo["arestas_novas"]:
+                            # O recall evocou nós do subconsciente: grafo mudou.
+                            persistir_grafo()
                             await ws.send_json({
                                 "type": "grafo_update",
                                 "payload": delta_grafo,
@@ -682,6 +815,8 @@ async def absorver_conhecimento(file: UploadFile = File(...)):
                     f"após injeção de '{file.filename}' — delta enviado ao frontend."
                 )
 
+            persistir_grafo()
+
             
     asyncio.create_task(task_absorcao())
     
@@ -773,6 +908,8 @@ async def absorver_url_endpoint(body: UrlIngestaoRequest):
                     "timestamp": datetime.now().isoformat()
                 })
 
+            persistir_grafo()
+
     asyncio.create_task(task_absorcao_url())
     
     return {
@@ -806,6 +943,7 @@ async def api_dormir(body: SonoRequest):
                     "payload": delta,
                     "timestamp": datetime.now().isoformat()
                 })
+                persistir_grafo()
         
         try:
             relatorio = await milla.dormir(
@@ -818,6 +956,7 @@ async def api_dormir(body: SonoRequest):
                 "payload": relatorio,
                 "timestamp": datetime.now().isoformat()
             })
+            persistir_grafo()
         except Exception as e:
             logger.error(f"[API Dormir] Erro: {e}", exc_info=True)
             await broadcast({
@@ -829,10 +968,61 @@ async def api_dormir(body: SonoRequest):
     asyncio.create_task(rodar_sono_api())
     return {"status": "sono_iniciado", "ciclos": body.ciclos}
 
+# ─── Painel compilado ─────────────────────────────────────────────────────────
+
+if PAINEL_DISPONIVEL:
+
+    # Os nomes dos assets têm hash do conteúdo: cache longo é seguro.
+    if (PASTA_PAINEL / "assets").is_dir():
+        app.mount(
+            "/assets",
+            StaticFiles(directory=PASTA_PAINEL / "assets"),
+            name="painel-assets",
+        )
+
+    @app.get("/{caminho:path}", include_in_schema=False)
+    async def servir_painel(caminho: str):
+        """
+        Entrega o build do painel (HTML, JS, CSS e favicon).
+
+        Declarada por último de propósito: o roteador tenta as rotas da API
+        antes, então esta só recebe o que não é ação.
+        """
+        if caminho.startswith("api/"):
+            return JSONResponse(
+                status_code=404, content={"erro": "Rota não encontrada."}
+            )
+
+        raiz = PASTA_PAINEL.resolve()
+        arquivo = (PASTA_PAINEL / caminho).resolve()
+        # `../` na URL não pode escapar da pasta do build.
+        if caminho and arquivo.is_file() and arquivo.is_relative_to(raiz):
+            return FileResponse(arquivo)
+        return FileResponse(PASTA_PAINEL / "index.html")
+
+
 # ─── Execução Local Direta ───────────────────────────────────────────────────
 
 
 if __name__ == "__main__":
     import uvicorn
-    logger.info("Iniciando Milla API Server na porta 8000...")
-    uvicorn.run("api:app", host="127.0.0.1", port=8000, reload=True)
+
+    host = os.environ.get("MILLA_HOST", config.HOST_PADRAO).strip() or config.HOST_PADRAO
+    porta = int(os.environ.get("MILLA_PORT", str(config.PORTA_PADRAO)))
+
+    if _erro_token:
+        raise SystemExit(f"Configuração inválida: {_erro_token}")
+
+    if autenticacao_ativa():
+        logger.info(
+            "Autenticação ativa: o painel pedirá o token de %s no primeiro acesso.",
+            host,
+        )
+    else:
+        logger.info(
+            "Sem MILLA_TOKEN: só clientes locais são aceitos. Para abrir na rede, "
+            "defina MILLA_TOKEN e use MILLA_HOST=0.0.0.0 (veja o README)."
+        )
+
+    logger.info("Iniciando Milla API Server em %s:%s...", host, porta)
+    uvicorn.run("api:app", host=host, port=porta, reload=True)

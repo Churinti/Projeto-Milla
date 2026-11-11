@@ -14,6 +14,15 @@ echo.
 set OLLAMA_VULKAN=1
 set HSA_OVERRIDE_GFX_VERSION=10.3.0
 
+echo.
+echo [OPCIONAL] Para abrir o painel em outro dispositivo da rede local:
+echo   1) Gere um token: python -c "import secrets; print(secrets.token_urlsafe(24))"
+echo   2) Descomente MILLA_HOST/MILLA_TOKEN abaixo e cole o token
+echo   3) Troque o passo 5 por: cd frontend ^&^& npm run dev -- --host
+echo.
+rem set MILLA_HOST=0.0.0.0
+rem set MILLA_TOKEN=cole-o-token-aqui
+
 echo [2/5] Verificando processos ativos do Ollama...
 tasklist /FI "IMAGENAME eq ollama.exe" 2>NUL | find /I /N "ollama.exe">NUL
 if "%ERRORLEVEL%"=="0" (

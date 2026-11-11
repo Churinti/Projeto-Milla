@@ -9,8 +9,114 @@ e a tag do git leem.
 
 ## [Não lançado]
 
+### Segurança
+
+- **Autenticação por token para uso em rede local.** O backend agora falha
+  fechado: com `MILLA_TOKEN` definido (no ambiente, nunca no `config.py`
+  versionado), toda a API — REST e WebSocket — exige a credencial; sem token,
+  só clientes loopback passam e qualquer IP de rede recebe `403` com a
+  instrução de configuração. A regra vale mesmo para
+  `uvicorn api:app --host 0.0.0.0`.
+  - `core/auth.py` (novo) centraliza a política: comparação em tempo constante
+    (`hmac.compare_digest`), validação do formato (o token viaja como
+    subprotocolo WebSocket, que só aceita `[A-Za-z0-9._~-]`, com mínimo de 16
+    caracteres) e `X-Forwarded-For` confiado apenas quando o peer é o proxy
+    local — sem isso o acesso da rede via Vite pareceria loopback.
+  - **WebSocket:** o token vai como segundo subprotocolo
+    (`new WebSocket(url, ['milla.v1', token])`) em vez de query string, que
+    entraria nos logs; handshake sem credencial é recusado antes do `accept`
+    com **1008** (política violada).
+  - **REST:** `Authorization: Bearer <token>`. `/api/auth/status` e a
+    documentação seguem alcançáveis para o painel descobrir o modo e o Swagger
+    continuar utilizável.
+  - **Rede:** `MILLA_HOST`/`MILLA_PORT` (padrões em `config.HOST_PADRAO` e
+    `config.PORTA_PADRAO`) permitem abrir na LAN sem editar código; o
+    `Iniciar_Milla.bat` traz o passo a passo comentado.
+- **Porta de acesso no painel** (`PortaoAcesso.tsx`). Antes de montar o
+  dashboard, o frontend consulta `/api/auth/status`: sem senha no servidor
+  libera direto; com token mostra o formulário; chegando pela rede sem token
+  configurado, explica o bloqueio. O token fica em `sessionStorage` (some ao
+  fechar a aba), vai como Bearer nas chamadas REST e como subprotocolo no
+  WebSocket; um close 1008 limpa a credencial e devolve o painel ao login em
+  vez de reconectar em loop.
+
 ### Adicionado
 
+- **Persistência do grafo ativo com snapshot coalescido**
+  (`core/persistencia.py`). Antes, `grafo_consciencia.json` só era escrito
+  quando alguém digitava `exportar`/`sair` no terminal, e a API sempre nascia
+  com os sete conceitos semeados — o grafo se perdia a cada reinício. Agora:
+  - o backend e o `python main.py` **restauram** o snapshot no boot (formato v2,
+    com `tipo` nas arestas; exportações v1 continuam legíveis) e só semeiam os
+    conceitos fundamentais que estiverem faltando;
+  - **nenhum ciclo serializa o grafo:** os fluxos que o alteram (estímulo, sono,
+    absorção, chat, micélio) chamam `marcar_sujo()`, e a gravação acontece no
+    máximo uma vez por `PERSISTENCIA_INTERVALO` (30 s), com flush no
+    desligamento gracioso (lifespan do FastAPI, `sair` ou Ctrl+C);
+  - a escrita é **atômica** (temporário + `os.replace` + `fsync`), então um
+    crash não trunca o snapshot; arquivo corrompido ou sem nós é ignorado com
+    aviso em vez de derrubar a inicialização;
+  - `exportar_grafo()` passou a delegar para o mesmo serializador, mantendo os
+    metadados (`timestamp`, `modelo`, `iteracoes`) para Gephi/Cytoscape;
+  - a lista de conceitos fundamentais saiu do `api.py` (onde estava duplicada)
+    e virou `main.SEMENTES` + `semear_conceitos()`, usada pelos dois pontos de
+    entrada.
+- **15 testes de persistência** (`scratch/test_persistencia.py`): round-trip de
+  nós e arestas, faces inválidas e arestas órfãs, formato v1, arquivo
+  corrompido, escrita atômica e coalescência por intervalo com relógio falso.
+- **Modo dockerizado em imagem única** (`Dockerfile`, `docker-compose.yml`,
+  `docker/entrypoint.sh`). O estágio Node compila o painel, o runtime Python
+  embute o Ollama oficial e o FastAPI serve `frontend/dist` na mesma origem:
+  um contêiner, um porto (`8000`), sem Vite e sem instalar Ollama ou Node na
+  máquina.
+  - O entrypoint sobe o Ollama, espera responder, baixa o modelo na primeira
+    execução e então inicia o `uvicorn`; sem `MILLA_TOKEN`, gera um e imprime no
+    log — a API nunca sobe aberta, porque de dentro do contêiner todo cliente
+    chega como IP de rede.
+  - Volumes `milla_dados` (modelos + snapshot do grafo) e `milla_chroma`
+    (subconsciente) preservam o estado entre `up` e `down`; `down -v` apaga.
+  - `MILLA_MODELO` e `MILLA_ARQUIVO_GRAFO` dão ao `config.py` o mesmo código
+    rodando local e no contêiner, sem duplicar constantes.
+  - `.dockerignore` deixa `node_modules`, `dist`, ChromaDB, snapshots e testes
+    fora do contexto; `.env` entrou no `.gitignore`.
+- **Painel compilado servido pelo backend** (`api.py`). `/`, `/assets/*`,
+  `/favicon.svg` e `/icons.svg` são públicos porque são só arquivos; toda ação
+  sob `/api/` continua exigindo token, e a lista é fechada de propósito — rota
+  nova fora dela nasce protegida. Arquivos fora de `frontend/dist` não são
+  servidos (`..` na URL cai no `index.html`) e `/api/...` desconhecida responde
+  JSON 404 em vez de HTML.
+  - **5 testes** em `scratch/test_painel.py` (raiz, assets com hash, favicon,
+    travessia de diretório e 404 da API), pulados quando o `dist` não existe.
+- **Suíte de testes de frontend com Vitest + Testing Library (83 testes).**
+  Infraestrutura em `frontend/vitest.config.ts` (jsdom, reaproveitando os
+  plugins do `vite.config.ts`) e `src/test/setup.ts` (matchers do jest-dom,
+  limpeza entre testes e stub de `scrollIntoView`, que o jsdom não implementa).
+  Cobre o que carrega decisão de estado e não apenas pixels:
+  - `conscienciaStore` (21 testes) — aplicação de deltas do grafo (nós novos,
+    modificados preservando a posição do d3, poda com fade-out de 2s, arestas
+    com direção normalizada), tokens e finalização do pensamento, máquina de
+    sono e o relatório narrado no chat.
+  - `useConsciencia` (18) — WebSocket falso com as constantes estáticas:
+    abertura, `estado_parcial`, `grafo_update`, `pensamento`, `ping`, `erro`,
+    absorção, sono, curiosidade, chat com Dijkstra, reconexão em 3s e
+    mensagens desconhecidas/malformadas sem derrubar o canal.
+  - `useGrafoFisica` (9) — descarte de arestas órfãs, posição inicial,
+    inércia preservada entre renders e parâmetros adaptativos por fase.
+  - `MetricsPanel`, `TerminalChat`, `AbsorcaoCognitiva` e `App` (35) —
+    telemetria e fases, envio de estímulo/pergunta, overlay de sono, streaming,
+    validação de formato e esquema de URL, erros da API e progresso por
+    WebSocket.
+- **38 testes de backend para a autenticação** (`scratch/test_auth.py`):
+  política (loopback, IPv6, IPv4-mapeado, rede, token curto/malformado),
+  parsing do Bearer e do subprotocolo, `X-Forwarded-For`, 401/403 nos
+  endpoints, `/api/auth/status`, preflight do CORS e handshake do WebSocket.
+  No frontend, `lib/auth` (5) e `PortaoAcesso` (8), mais 3 casos de
+  subprotocolo/1008 em `useConsciencia` e 1 de header no upload — a suíte
+  fecha em **100 testes**.
+- **Scripts `test`, `test:watch` e `test:coverage` no frontend**, e a CI roda
+  `npm run test:coverage` com piso de **45%** em `vitest.config.ts` (mesmo
+  papel do `--cov-fail-under=35` do backend). Cobertura atual: **~50%** de
+  statements, com store a ~97% e hooks a ~96%.
 - **`pytest-cov` — cobertura de testes medida em todo `pytest`**, local e na
   CI. Configuração em dois lugares com papéis distintos:
   - **`.coveragerc`** (novo) — *o que* é medido: `source = .`, ou seja o
@@ -67,7 +173,9 @@ e a tag do git leem.
 | `core/pathfinding.py` | 14,0% | **100%** |
 | `core/micelio.py` | 15,2% | **97,0%** |
 | `core/estado_sono.py` | 84,6% | **100%** |
-| `api.py` | não reportado | **29,7%** |
+| `api.py` | não reportado | **29,7%** (44,2% hoje) |
+| `core/auth.py` | — | **100%** |
+| `core/persistencia.py` | — | **94,9%** |
 
 \* *O "antes" é a primeira medição com o `.coveragerc` já incluindo `api.py`
 (283 stmts a 0%): sem o arquivo de configuração o número anterior de 37%
@@ -77,6 +185,15 @@ O que restou sem cobertura está concentrado em caminhos que dependem de
 serviços externos — Ollama (`engine/fusao.py`), HTTP (`core/absorvedor.py`),
 ChromaDB (`core/subconsciente.py`) — e nos endpoints WebSocket/POST da API,
 que exigem mocks de rede para serem exercitados sem servidor real.
+
+**Com autenticação, persistência e painel compilado**, o total do backend está
+em **55,3%** — `core/auth.py` em **100%**, `core/persistencia.py` em **94,9%**
+e `api.py` em 44,2% (os endpoints de absorção, sono e chat seguem sem mock de
+rede).
+
+**Frontend:** a suíte Vitest mede todo o `src/` e está em **53,7%** de
+statements. `GrafoNeon` e `Dodecaedro3D` ficam fora por dependerem de Canvas 2D
+e WebGL, contextos que o jsdom não implementa.
 
 ## [0.2.0] - 2026-10-27
 

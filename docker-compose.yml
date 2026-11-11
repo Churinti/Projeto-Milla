@@ -1,0 +1,36 @@
+# Imagem única: painel + FastAPI + Ollama no mesmo contêiner.
+#
+#   cp .env.example .env      # defina MILLA_TOKEN (ou deixe vazio e leia o log)
+#   docker compose up --build
+#
+# O painel fica em http://localhost:8000 — o FastAPI serve `frontend/dist`.
+
+services:
+  milla:
+    build: .
+    image: milla:local
+    container_name: milla
+    ports:
+      - "${MILLA_PORTA_PUBLICA:-8000}:8000"
+    environment:
+      # Vazio → o entrypoint gera um token e imprime no log da inicialização.
+      MILLA_TOKEN: ${MILLA_TOKEN:-}
+      MILLA_MODELO: ${MILLA_MODELO:-qwen2.5:7b-instruct-q4_K_M}
+    volumes:
+      # Modelos do Ollama + snapshot grafo_consciencia.json.
+      - milla_dados:/dados
+      # Subconsciente vetorial (ChromaDB).
+      - milla_chroma:/app/chroma_data_milla
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/auth/status"]
+      interval: 30s
+      timeout: 5s
+      # A primeira execução baixa o modelo antes de subir o uvicorn; a janela
+      # cobre o download em conexões lentas sem marcar o contêiner como doente.
+      start_period: 600s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  milla_dados:
+  milla_chroma:

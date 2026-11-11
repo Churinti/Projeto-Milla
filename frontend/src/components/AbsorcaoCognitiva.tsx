@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { FileUp, FileText, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { useConscienciaStore } from '../store/conscienciaStore';
 import type { AbsorcaoStatus } from '../store/conscienciaStore';
+import { cabecalhosAuth } from '../lib/auth';
 
 type EstadoAbsorcao = 'idle' | 'dragging' | 'processando' | 'sucesso' | 'erro';
 
@@ -99,6 +100,7 @@ export function AbsorcaoCognitiva() {
     try {
       const response = await fetch('/api/absorver-conhecimento', {
         method: 'POST',
+        headers: cabecalhosAuth(),
         body: formData
       });
       
@@ -145,7 +147,7 @@ export function AbsorcaoCognitiva() {
     try {
       const response = await fetch('/api/absorver-url', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...cabecalhosAuth() },
         body: JSON.stringify({ url })
       });
       

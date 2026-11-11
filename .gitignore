@@ -3,6 +3,9 @@ chroma_data_*/
 test_chroma_*/
 *.chroma
 
+# Segredos locais (token do `docker compose`)
+.env
+
 # Sonhos gerados localmente
 ai_dreams/
 

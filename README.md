@@ -34,7 +34,7 @@ Milla é um agente de IA com memória persistente, sono autônomo e curiosidade 
 | RAG Convencional | Projeto Milla |
 | :--- | :--- |
 | **Memória estática e linear** | Grafo topológico vivo que decai e se reorganiza |
-| **Sem estado entre sessões** | Subconsciente persistente (ChromaDB) entre sessões |
+| **Sem estado entre sessões** | Grafo ativo (snapshot JSON) e subconsciente (ChromaDB) persistem entre sessões |
 | **Passivo — só responde** | Ativo — pesquisa lacunas na web autonomamente |
 | **Prompt único massivo** | Comitê de 3 agentes especializados |
 | **Sem feedback arquitetural** | Coerência geométrica guia o próprio raciocínio |
@@ -200,7 +200,9 @@ Projeto-Milla/
 │   ├── metricas.py             # Termômetro do Self e Medidor de Coerência
 │   ├── absorvedor.py           # Núcleo de Absorção Semântica + validação anti-SSRF
 │   ├── curiosidade.py          # Motor de Curiosidade, DuckDuckGo scraper & Circuit Breaker
-│   └── estado_sono.py          # Máquina de estados explícita de sono e repouso
+│   ├── estado_sono.py          # Máquina de estados explícita de sono e repouso
+│   ├── auth.py                 # Política de acesso: token, loopback e subprotocolo WS
+│   └── persistencia.py         # Snapshot do grafo com coalescência e escrita atômica
 ├── engine/
 │   ├── __init__.py
 │   ├── fusao.py                # O Interior Oco (LLM Local / Ollama / OpenAI)
@@ -213,18 +215,25 @@ Projeto-Milla/
 │       │   ├── GrafoNeon.tsx        # Grafo interativo 2D Canvas + d3-force
 │       │   ├── MetricsPanel.tsx     # HUD circular de telemetria existencial
 │       │   ├── TerminalChat.tsx     # Console de streaming token-a-token
-│       │   └── AbsorcaoCognitiva.tsx # Card cibernético de upload Drag & Drop
+│       │   ├── AbsorcaoCognitiva.tsx # Card cibernético de upload Drag & Drop
+│       │   └── PortaoAcesso.tsx     # Tela de token e bloqueio de rede sem senha
 │       ├── hooks/
 │       │   ├── useConsciencia.ts    # Conector WebSocket tipado, com auto-reconnect
 │       │   └── useGrafoFisica.ts    # Física inercial d3-force tipada
 │       ├── store/
 │       │   └── conscienciaStore.ts  # Estado global e aplicação inteligente de deltas
+│       ├── lib/auth.ts              # Token na sessão, Bearer e subprotocolo do WS
 │       ├── types/consciencia.ts     # Tipos compartilhados, incl. WSMessage
+│       ├── test/setup.ts            # jsdom + jest-dom + cleanup do Testing Library
+│       ├── **/*.test.ts(x)          # Suíte Vitest, ao lado de cada módulo testado
 │       ├── index.css                # Estética e variáveis neon holográficas
 │       └── App.tsx                  # Grid HUD principal do painel
 ├── scratch/                    # Suíte de testes (pytest)
 │   ├── test_absorvedor.py      # parser resiliente do Absorvedor
 │   ├── test_api_delta.py       # serialização + delta do WebSocket, endpoints GET
+│   ├── test_auth.py            # política de token/loopback, REST e handshake WS
+│   ├── test_persistencia.py    # round-trip do snapshot, formato antigo e coalescência
+│   ├── test_painel.py          # painel compilado servido pelo FastAPI
 │   ├── test_curiosidade.py     # Circuit Breaker + análise de lacunas
 │   ├── test_estado_sono.py     # máquina de estados do sono
 │   ├── test_extractor.py       # extração de texto de HTML
@@ -234,6 +243,11 @@ Projeto-Milla/
 │   ├── test_multi_agente.py    # comitê de fusão multi-agente
 │   └── test_pathfinding.py     # caminhos de raciocínio (Dijkstra invertido)
 ├── api.py                      # Servidor FastAPI com WebSocket & cálculo de deltas
+├── Dockerfile                  # Imagem única: painel compilado + Ollama embutido
+├── docker-compose.yml          # Um contêiner, volumes de modelos/grafo/chroma
+├── docker/
+│   └── entrypoint.sh           # Sobe o Ollama, garante o modelo e inicia o uvicorn
+├── .env.example                # Modelo de MILLA_TOKEN/MILLA_MODELO do compose
 ├── config.py                   # Configurações globais, thresholds e VERSAO
 ├── main.py                     # Pipeline síncrono completo no terminal
 ├── Iniciar_Milla.bat           # Orquestrador de 1 clique (Windows)
@@ -285,6 +299,7 @@ Milla conta com um **Dashboard Cibernético Holográfico** integrado em tempo re
 *   **Zustand** (Estado global com mesclagem inteligente de deltas)
 *   **Lucide React** (Ícones de HUD tecnológico)
 *   **ESLint + typescript-eslint + eslint-plugin-react-hooks** (Qualidade estática)
+*   **Vitest + Testing Library + jsdom** (Testes de store, hooks e componentes)
 
 ---
 
@@ -353,7 +368,7 @@ ollama serve
 ```bash
 python api.py
 ```
-*Sobe em `http://127.0.0.1:8000`, semeia a matriz sináptica inicial e aguarda conexões WebSocket. A documentação interativa fica em `http://127.0.0.1:8000/docs`.*
+*Sobe em `http://127.0.0.1:8000`, restaura o snapshot do grafo (ou semeia a matriz inicial) e aguarda conexões WebSocket. A documentação interativa fica em `http://127.0.0.1:8000/docs`.*
 
 **3. Interface (Vite)** — em outro terminal:
 ```bash
@@ -364,6 +379,59 @@ npm run dev
 
 > O Vite faz proxy de `/api` e `/ws` para `127.0.0.1:8000`, então em
 > desenvolvimento o navegador enxerga tudo como same-origin.
+
+### 🐳 Imagem única com Ollama embutido (Docker)
+
+O [`Dockerfile`](./Dockerfile) compila o painel e embala **painel + backend +
+Ollama** em um único contêiner. Não é preciso ter Node, Ollama nem as
+dependências Python na máquina — só Docker com Compose. O FastAPI serve o
+`frontend/dist` no mesmo porto, então tudo responde em `http://localhost:8000`
+(sem Vite e sem proxy).
+
+```bash
+# 1. Modelo de ambiente (PowerShell: Copy-Item .env.example .env)
+cp .env.example .env
+
+# 2. Defina MILLA_TOKEN no .env (ou deixe vazio e leia o token no log)
+python -c "import secrets; print(secrets.token_urlsafe(24))"
+
+# 3. Suba — o primeiro build baixa o Ollama e o modelo (alguns GB)
+docker compose up --build
+```
+
+Sem `MILLA_TOKEN` no `.env`, o entrypoint gera um na inicialização e o imprime
+no log: `docker compose logs milla | grep token`. A API nunca sobe aberta,
+porque de dentro do contêiner todo cliente chega como IP de rede — a regra de
+loopback de [`core/auth.py`](./core/auth.py) não se aplica.
+
+| Volume | Conteúdo |
+| :--- | :--- |
+| `milla_dados` | modelos do Ollama + snapshot `grafo_consciencia.json` |
+| `milla_chroma` | subconsciente vetorial (ChromaDB) |
+
+`docker compose stop` encerra gravando o snapshot pendente (o entrypoint
+repassa o SIGTERM ao uvicorn); `docker compose down` para e mantém os volumes;
+`docker compose down -v` também apaga grafo, memória vetorial e modelos.
+
+Detalhes que importam:
+
+*   **CPU por padrão.** O Ollama roda em CPU dentro do contêiner; o
+    `qwen2.5:7b` responde, mas devagar. Para GPU NVIDIA, o host precisa do
+    `nvidia-container-toolkit` e do bloco `deploy.resources.reservations.devices`
+    no compose — a imagem em si não muda.
+*   **Porta:** o compose publica `8000` (`MILLA_PORTA_PUBLICA` no `.env` muda o
+    lado do host). O contêiner sempre escuta `0.0.0.0:8000` internamente.
+*   **Rede local:** publicar em `0.0.0.0` já é o padrão do contêiner; o token é
+    o que separa a sua instância do resto da rede.
+*   **Atualização:** `docker compose build --pull` recompila o painel e atualiza
+    as dependências; o modelo continua no volume.
+*   **Docker travado em “Starting the Docker Engine” (Windows):** é o WSL2, não
+    a Milla. Confira `(Get-CimInstance Win32_ComputerSystem).HypervisorPresent`
+    (precisa ser `True`; senão, `bcdedit /set hypervisorlaunchtype auto` como
+    administrador e reinicie) e `wsl -l -v` (o Docker depende da distro
+    `docker-desktop`). Se o disco existir em `%LOCALAPPDATA%\Docker\wsl` mas a
+    distro não aparecer, ela pode ser registrada de volta com
+    `wsl --import-in-place docker-desktop <caminho>\ext4.vhdx`.
 
 ### 🔌 Interface Síncrona Clássica (Terminal)
 
@@ -376,6 +444,23 @@ python main.py
 *   `estado` : Exibe o termômetro existencial detalhado, a lista de nós carregados e conexões ativas.
 *   `exportar` : Salva o grafo completo estruturado em `grafo_consciencia.json` para análise externa (Gephi, Cytoscape).
 *   `sair` : Salva o estado atual e encerra a sessão com segurança.
+
+### 💾 Persistência do grafo ativo
+
+Ao iniciar, o backend (e o `python main.py`) restaura `grafo_consciencia.json`
+quando o arquivo existe e é válido; os sete conceitos fundamentais só são
+semeados do zero quando não há snapshot (ou quando algum deles estiver ausente).
+
+O caminho inverso **não** serializa o grafo a cada ciclo. Quem altera o grafo
+marca o estado como sujo; o [`core/persistencia.py`](./core/persistencia.py)
+grava no máximo uma vez a cada `PERSISTENCIA_INTERVALO` (30 s) e força o flush
+no desligamento gracioso (lifespan do FastAPI, `sair` no terminal ou Ctrl+C).
+A escrita é **atômica** (arquivo temporário + `os.replace`): um crash no meio
+deixa o snapshot anterior intacto, nunca um JSON truncado.
+
+O comando `exportar` continua gerando uma cópia com `timestamp`, `modelo` e
+`iteracoes` para Gephi/Cytoscape — mesmo formato de grafo, com metadados de
+exportação.
 
 ---
 
@@ -394,6 +479,12 @@ ruff check .
 # Backend: relatório de cobertura em HTML (abrir htmlcov/index.html)
 python -m pytest --cov-report=html
 
+# Frontend: testes (Vitest + Testing Library)
+cd frontend && npm test
+
+# Frontend: cobertura (piso de 45% em vitest.config.ts)
+cd frontend && npm run test:coverage
+
 # Frontend: lint
 cd frontend && npm run lint
 
@@ -404,9 +495,11 @@ cd frontend && npm run build
 | Verificação | Comando | O que cobre |
 | :--- | :--- | :--- |
 | Lint Python | `ruff check .` | imports mortos, variáveis sem uso, f-strings e sintaxe (regras em [`ruff.toml`](./ruff.toml)) |
-| Testes Python | `python -m pytest` | absorvedor, API (delta + endpoints), curiosidade, estado de sono, extractor, homeostase, micélio, métricas, comitê multi-agente e pathfinding |
+| Testes Python | `python -m pytest` | absorvedor, API (delta + endpoints), autenticação, curiosidade, estado de sono, extractor, homeostase, micélio, métricas, painel compilado, persistência, comitê multi-agente e pathfinding |
 | Cobertura | automática no `pytest` | relatório `term-missing` + piso de 35% (config. em [`.coveragerc`](./.coveragerc)) |
 | Sintaxe Python | `python -m compileall .` | todos os módulos `core/`, `engine/` e da raiz |
+| Testes frontend | `npm test` | store Zustand, hook WebSocket (socket falso), física d3-force e componentes |
+| Cobertura frontend | `npm run test:coverage` | relatório `term` + `html` e piso de 45% (config. em `vitest.config.ts`) |
 | Lint | `npm run lint` | ESLint com regras React, React Hooks e TypeScript |
 | Type-check | `tsc -b` (roda no `build`) | tipos do WebSocket, da física d3 e da store Zustand |
 | Build | `npm run build` | bundle de produção |
@@ -433,12 +526,25 @@ python -m pytest --cov-report=html   # htmlcov/index.html navegável
 *   **Piso:** `--cov-fail-under=35` no `pytest.ini` faz a CI **falhar** se a
     cobertura total cair abaixo de 35%. É um guarda contra regressão silenciosa,
     não uma meta de número.
-*   **Estado atual: ~48%** com a suíte inteira passando. Os módulos puros do
+*   **Estado atual: ~55%** com a suíte inteira passando. Os módulos puros do
     núcleo cognitivo (`metricas`, `pathfinding`, `estado_sono`, `micélio`,
     `no_dodecaedrico`, `config`) estão a 100% — os trechos sem cobertura estão
     concentrados nos caminhos que dependem de serviços externos (Ollama, HTTP,
     ChromaDB) e nos endpoints WebSocket/POST da API, que exigem mocks de rede
     para serem testados sem um servidor de verdade.
+
+### Cobertura do frontend
+
+O Vitest mede todo o `src/` (`include`/`exclude` em [`vitest.config.ts`](./frontend/vitest.config.ts));
+`npm run test:coverage` gera o relatório `term` + `html` e a CI roda o mesmo
+comando. O piso de **45%** existe pelo mesmo motivo do piso do backend: guardar
+contra regressão silenciosa, não perseguir um número.
+
+*   **Estado atual: ~50%** de statements, com a store Zustand (~97%), os hooks
+    (~96%) e os componentes de painel perto de 100%.
+*   **O que resta fora:** `GrafoNeon` e `Dodecaedro3D` dependem de Canvas 2D e
+    WebGL, que o jsdom não implementa — cobri-los exige um harness de canvas
+    falso, então ficam como limitação conhecida.
 
 ---
 
@@ -448,8 +554,13 @@ A documentação interativa (Swagger) sobe em `http://127.0.0.1:8000/docs`.
 
 ### REST
 
+Com `MILLA_TOKEN` definido, todas as rotas exigem `Authorization: Bearer
+<token>` — exceto `/api/auth/status`, que existe justamente para o painel
+descobrir se precisa pedir a senha.
+
 | Método | Rota | Corpo | Descrição |
 | :--- | :--- | :--- | :--- |
+| `GET` | `/api/auth/status` | — | `{"autenticacao_ativa", "autenticado", "erro"?}`; sempre alcançável |
 | `GET` | `/api/estado` | — | Métricas do Self (coerência, vitalidade, complexidade, desejo, contagens) |
 | `GET` | `/api/grafo` | — | Snapshot completo do grafo para render externo |
 | `POST` | `/api/absorver-conhecimento` | `multipart/form-data` campo `file` (`.pdf`, `.docx`, `.txt`, `.md`; até 10 MB) | Inicia a ingestão; o progresso chega pelo WebSocket |
@@ -459,6 +570,11 @@ A documentação interativa (Swagger) sobe em `http://127.0.0.1:8000/docs`.
 ### WebSocket — `ws://127.0.0.1:8000/ws/consciencia`
 
 Toda mensagem tem o formato `{"type": "...", "payload": {...}}`.
+
+Com autenticação ativa, o handshake precisa anunciar os subprotocolos
+`['milla.v1', '<token>']` (`new WebSocket(url, ['milla.v1', token])`). Sem
+token, ou com token inválido, o servidor recusa antes do `accept` e fecha com
+**1008** (política violada) — o cliente não deve reconectar até autenticar.
 
 **Cliente → Servidor**
 
@@ -490,8 +606,8 @@ Toda mensagem tem o formato `{"type": "...", "payload": {...}}`.
 
 ## 🔒 Segurança
 
-O servidor escuta **apenas em `127.0.0.1`** — ele não fica exposto na rede local
-a menos que você mude o `host` manualmente. Além disso:
+O servidor escuta **apenas em `127.0.0.1`** por padrão — ele não fica exposto na
+rede local a menos que você mude o host, e ao mudar ele exige token. Além disso:
 
 ### Proteção contra SSRF na absorção de URLs
 
@@ -535,13 +651,63 @@ Para liberar outra origem pontualmente:
 set MILLA_CORS_ORIGINS=https://painel.exemplo.com,https://staging.exemplo.com
 ```
 
+### Acesso pela rede local (token)
+
+Para abrir o painel no celular ou em outro computador, o backend precisa
+escutar fora do loopback. A regra em [`core/auth.py`](./core/auth.py) é **falha
+fechada**:
+
+| `MILLA_TOKEN` | Quem entra |
+| :--- | :--- |
+| **definido** | só com `Authorization: Bearer <token>` no REST e o token como subprotocolo no WebSocket — inclusive na própria máquina |
+| **ausente** | apenas requisições de loopback; qualquer IP de rede recebe `403` explicando como configurar |
+
+Ou seja: não existe instância atendendo a rede sem senha, mesmo que alguém rode
+`uvicorn api:app --host 0.0.0.0` sem ler esta página.
+
+Passo a passo, no computador que roda a Milla:
+
+```bash
+# 1. Gere um token (32 caracteres seguros para URL)
+python -c "import secrets; print(secrets.token_urlsafe(24))"
+
+# 2. Suba o backend na rede com o token (no PowerShell: $env:MILLA_TOKEN="...")
+set MILLA_HOST=0.0.0.0
+set MILLA_TOKEN=cole-o-token-aqui
+python api.py
+
+# 3. Suba o painel aceitando conexões externas
+cd frontend && npm run dev -- --host
+```
+
+No celular, abra `http://<ip-do-computador>:5173`, digite o token na tela de
+acesso e use o painel normalmente. O token fica no `sessionStorage` (some ao
+fechar a aba) e não é exibido de volta.
+
+Detalhes que importam:
+
+*   **WebSocket sem header:** o navegador não deixa o JS definir headers no
+    handshake, então o token vai como segundo subprotocolo
+    (`['milla.v1', token]`) — e não em query string, que apareceria nos logs do
+    uvicorn e do proxy. Credencial recusada fecha com **1008** e o painel volta
+    ao login em vez de reconectar em loop.
+*   **Proxy do Vite:** o dev-server repassa a requisição a partir de
+    `127.0.0.1`; o `xfwd` do proxy preserva o IP de origem em
+    `X-Forwarded-For`, e o backend só confia nesse cabeçalho quando o peer é
+    loopback. Sem isso, todo acesso vindo da rede pareceria local.
+*   **Comparação em tempo constante** (`hmac.compare_digest`), sem revelar
+    quantos caracteres do token bateram.
+*   **HTTP é texto puro:** na rede local o token trafega sem TLS. Use em rede
+    confiável ou coloque um proxy com HTTPS na frente — não exponha a porta
+    diretamente à internet.
+*   Para voltar ao modo local, basta não definir `MILLA_TOKEN`; o host padrão
+    (`127.0.0.1`, ou `HOST_PADRAO` em `config.py`) já não aceita conexões de
+    fora.
+
 ### Limites de ingestão
 *   Arquivos de até **10 MB**.
 *   Apenas `.pdf`, `.docx`, `.txt` e `.md`.
 *   Resposta da página precisa ser `text/html` ou `text/plain`.
-
-> **Não há autenticação.** Milla é um protótipo pensado para rodar na sua
-> máquina. Não exponha a porta 8000 à internet sem colocar algo à frente.
 
 ---
 
@@ -566,11 +732,19 @@ Tudo fica em [`config.py`](./config.py) — fonte única de verdade, sem arquivo
 | `TAXA_REFORCO` | `0.05` | Quanto reforçar arestas dos nós ativados |
 | `TAXA_DECAIMENTO` | `0.01` | Quanto enfraquecer nós não ativados por ciclo |
 | `TARGET_COERENCIA` | `0.85` | Nível-alvo de coerência (o "desejo") |
+| `HOST_PADRAO` | `127.0.0.1` | Interface do servidor (env `MILLA_HOST` sobrepõe) |
+| `PORTA_PADRAO` | `8000` | Porta do servidor (env `MILLA_PORT` sobrepõe) |
+| `ARQUIVO_GRAFO` | `grafo_consciencia.json` | Snapshot do grafo ativo, lido na inicialização |
+| `PERSISTENCIA_INTERVALO` | `30` | Segundos mínimos entre gravações do snapshot |
 
 **Variáveis de ambiente**
 
 | Variável | Efeito |
 | :--- | :--- |
+| `MILLA_TOKEN` | Exige token de acesso em toda a API (ver “Acesso pela rede local”) |
+| `MILLA_HOST` · `MILLA_PORT` | Interface e porta do `python api.py` (ex.: `0.0.0.0` para a rede) |
+| `MILLA_MODELO` | Modelo usado pelo backend **e** baixado pelo Ollama no Docker |
+| `MILLA_ARQUIVO_GRAFO` | Caminho do snapshot do grafo (o Docker usa `/dados/grafo_consciencia.json`) |
 | `MILLA_CORS_ORIGINS` | Origens extras liberadas no CORS, separadas por vírgula |
 | `OLLAMA_VULKAN=1` | Habilita a aceleração Vulkan do Ollama (AMD) |
 | `HSA_OVERRIDE_GFX_VERSION=10.3.0` | Override de GPU AMD para o Ollama |
@@ -579,7 +753,7 @@ Tudo fica em [`config.py`](./config.py) — fonte única de verdade, sem arquivo
 
 | Arquivo | Conteúdo |
 | :--- | :--- |
-| `grafo_consciencia.json` | Último snapshot do grafo (exportável para Gephi/Cytoscape) |
+| `grafo_consciencia.json` | Snapshot do grafo ativo (restaurado no boot; exportável para Gephi/Cytoscape) |
 | `chroma_data_milla/` | Subconsciente vetorial persistente |
 | `milla.log` | Log do servidor |
 
@@ -597,10 +771,10 @@ O histórico completo fica em [CHANGELOG.md](./CHANGELOG.md).
 - [x] Code-splitting do bundle de produção (805 kB → 255 kB no primeiro load)
 - [x] Linter de Python (ruff) e checagem na CI
 - [x] Cobertura de testes (`pytest-cov`, piso de 35% na CI)
-- [ ] Autenticação para uso em rede local
-- [ ] Testes de frontend (Vitest + Testing Library)
-- [ ] Persistência do grafo ativo sem serialização por ciclo
-- [ ] Modo dockerizado (imagem única com Ollama embutido)
+- [x] Testes de frontend (Vitest + Testing Library, piso de 45% na CI)
+- [x] Autenticação para uso em rede local (token + porta de acesso no painel)
+- [x] Persistência do grafo ativo sem serialização por ciclo (snapshot coalescido)
+- [x] Modo dockerizado (imagem única com Ollama embutido)
 
 ---
 

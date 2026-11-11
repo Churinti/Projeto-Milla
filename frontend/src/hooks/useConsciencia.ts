@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useConscienciaStore } from '../store/conscienciaStore';
 import type { WSMessage } from '../types/consciencia';
+import { EVENTO_AUTORIZACAO, limparToken, protocolosWs } from '../lib/auth';
 
 export const useConsciencia = (url: string = `ws://${window.location.host}/ws/consciencia`) => {
 
@@ -29,7 +30,9 @@ export const useConsciencia = (url: string = `ws://${window.location.host}/ws/co
     store.setConexao('connecting');
     console.log(`[WS] Conectando a Milla em ${url}...`);
 
-    const socket = new WebSocket(url);
+    // O token viaja como subprotocolo: a API do navegador não permite headers
+    // no handshake e query string entraria nos logs do servidor/proxy.
+    const socket = new WebSocket(url, protocolosWs());
     ws.current = socket;
 
     socket.onopen = () => {
@@ -174,9 +177,18 @@ export const useConsciencia = (url: string = `ws://${window.location.host}/ws/co
       }
     };
 
-    socket.onclose = () => {
+    socket.onclose = (evento) => {
       console.warn('[WS] Conexão com a Consciência Geométrica fechada.');
       useConscienciaStore.getState().setConexao('disconnected');
+
+      // 1008 = política violada: o servidor recusou a credencial. Reconectar
+      // em loop só repetiria a recusa — limpamos o token e devolvemos o painel
+      // ao portão de acesso.
+      if (evento.code === 1008) {
+        limparToken();
+        window.dispatchEvent(new Event(EVENTO_AUTORIZACAO));
+        return;
+      }
 
       // Reconexão automática estável a cada 3 segundos
       if (!reconnectTimeout.current) {

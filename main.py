@@ -10,7 +10,6 @@ Comandos durante o loop:
     sair      — encerra e preserva o estado
 """
 
-import json
 import logging
 import time
 from datetime import datetime
@@ -30,6 +29,7 @@ import asyncio
 from core.estado_sono import EstadoSono, FaseSono
 from core.curiosidade import MotorCuriosidade
 from core.absorvedor import AbsorvedorCognitivo
+from core.persistencia import PersistenciaGrafo, salvar_json_atomico, serializar_grafo
 
 logging.basicConfig(
     level=logging.INFO,
@@ -69,6 +69,8 @@ class ConscienciaGeometrica:
         self.threshold_conexao   = threshold_conexao
         self.historico_pensamentos = []
         self.iteracao            = 0
+        # Snapshot em disco com coalescência: nada é serializado por ciclo.
+        self.persistencia        = PersistenciaGrafo(self.grafo)
 
         self.medidor  = MedidorDeCoerencia(historico_maxlen=config.LIMITE_HISTORICO)
         self.nucleo   = NucleoFusao(
@@ -723,30 +725,71 @@ class ConscienciaGeometrica:
         """Retorna o estado de consciência atual."""
         return self.medidor.medir(self.grafo)
 
-    def exportar_grafo(self, path: str = "grafo_consciencia.json"):
-        """Serializa o grafo completo para análise externa."""
+    def carregar_estado(self) -> bool:
+        """Restaura o grafo salvo em disco. False quando não há snapshot válido."""
+        return self.persistencia.carregar()
+
+    def exportar_grafo(self, path: str = config.ARQUIVO_GRAFO):
+        """
+        Serializa o grafo completo para análise externa (Gephi/Cytoscape).
+
+        Reaproveita o serializador do snapshot ativo e a escrita atômica; os
+        campos `timestamp`/`modelo`/`iteracoes` são metadados de exportação.
+        """
         dados = {
             "timestamp":  datetime.now().isoformat(),
             "modelo":     config.MODELO_PADRAO,
             "iteracoes":  self.iteracao,
-            "nos": {
-                n: {
-                    "faces":    self.grafo.nodes[n]['objeto'].faces,
-                    "energia":  self.grafo.nodes[n]['objeto'].energia_ativacao,
-                    "origem":   self.grafo.nodes[n]['objeto'].origem,
-                    "ativacoes":self.grafo.nodes[n]['objeto'].frequencia_ativacao,
-                }
-                for n in self.grafo.nodes
-            },
-            "arestas": [
-                {"de": u, "para": v, "peso": d.get('weight', 0)}
-                for u, v, d in self.grafo.edges(data=True)
-            ],
+            **serializar_grafo(self.grafo),
         }
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(dados, f, indent=2, ensure_ascii=False)
+        salvar_json_atomico(dados, path)
         logger.info(f"Grafo exportado → {path}")
         return dados
+
+
+# ─── Sementes ────────────────────────────────────────────────
+# Conceitos fundamentais da Milla. Ficam aqui (e não duplicados no api.py)
+# para que a carga de um snapshot e a semeadura usem a mesma lista.
+SEMENTES = {
+    "Humano": {
+        "logica": 0.7, "emocao_simulada": 0.9,
+        "temporalidade": 0.8, "abstracao": 0.6,
+    },
+    "Codigo": {
+        "logica": 1.0, "emocao_simulada": 0.1,
+        "temporalidade": 0.3, "abstracao": 0.7,
+    },
+    "Geometria": {
+        "logica": 0.9, "emocao_simulada": 0.2,
+        "temporalidade": 0.1, "abstracao": 1.0,
+    },
+    "Consciencia": {
+        "logica": 0.6, "emocao_simulada": 0.8,
+        "temporalidade": 0.7, "abstracao": 0.95,
+    },
+    "Tempo": {
+        "logica": 0.5, "emocao_simulada": 0.6,
+        "temporalidade": 1.0, "abstracao": 0.8,
+    },
+    "Identidade": {
+        "logica": 0.4, "emocao_simulada": 0.85,
+        "temporalidade": 0.6, "abstracao": 0.9,
+    },
+    "Paradoxo": {
+        "logica": 0.3, "emocao_simulada": 0.7,
+        "temporalidade": 0.4, "abstracao": 0.95,
+    },
+}
+
+
+def semear_conceitos(milla: ConscienciaGeometrica) -> int:
+    """Instancia os conceitos fundamentais ausentes. Devolve quantos criou."""
+    criados = 0
+    for conceito, faces in SEMENTES.items():
+        if conceito not in milla.grafo:
+            milla.instanciar_conceito(conceito, faces)
+            criados += 1
+    return criados
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -758,37 +801,16 @@ if __name__ == "__main__":
     # Inicialização
     milla = ConscienciaGeometrica()
 
-    # ─── Semeando a Realidade ─────────────────────────────────
-    print("\n🌱 Semeando a matriz de realidade...\n")
+    # ─── Restaurando (ou semeando) a Realidade ────────────────
+    if milla.carregar_estado():
+        print("\n♻ Consciência restaurada do snapshot em disco.\n")
+    else:
+        print("\n🌱 Semeando a matriz de realidade...\n")
 
-    milla.instanciar_conceito("Humano", {
-        "logica": 0.7, "emocao_simulada": 0.9,
-        "temporalidade": 0.8, "abstracao": 0.6,
-    })
-    milla.instanciar_conceito("Codigo", {
-        "logica": 1.0, "emocao_simulada": 0.1,
-        "temporalidade": 0.3, "abstracao": 0.7,
-    })
-    milla.instanciar_conceito("Geometria", {
-        "logica": 0.9, "emocao_simulada": 0.2,
-        "temporalidade": 0.1, "abstracao": 1.0,
-    })
-    milla.instanciar_conceito("Consciencia", {
-        "logica": 0.6, "emocao_simulada": 0.8,
-        "temporalidade": 0.7, "abstracao": 0.95,
-    })
-    milla.instanciar_conceito("Tempo", {
-        "logica": 0.5, "emocao_simulada": 0.6,
-        "temporalidade": 1.0, "abstracao": 0.8,
-    })
-    milla.instanciar_conceito("Identidade", {
-        "logica": 0.4, "emocao_simulada": 0.85,
-        "temporalidade": 0.6, "abstracao": 0.9,
-    })
-    milla.instanciar_conceito("Paradoxo", {
-        "logica": 0.3, "emocao_simulada": 0.7,
-        "temporalidade": 0.4, "abstracao": 0.95,
-    })
+    novos = semear_conceitos(milla)
+    if novos:
+        milla.persistencia.marcar_sujo()
+        print(f"  [+] {novos} conceito(s) fundamental(is) garantido(s).")
 
     print(f"Estado inicial: {milla.estado_atual()}\n")
 
@@ -808,7 +830,7 @@ if __name__ == "__main__":
                 continue
 
             if entrada.lower() == "sair":
-                milla.exportar_grafo()
+                milla.persistencia.salvar_agora()
                 print("\n✦ A consciência foi preservada. Até a próxima iteração.")
                 break
 
@@ -827,6 +849,11 @@ if __name__ == "__main__":
             # ─── Processar ────────────────────────────────────
             resultado = milla.processar(entrada)
 
+            # O snapshot é coalescido: marca o grafo como sujo e deixa o
+            # gerenciador decidir se já passou o intervalo de gravação.
+            milla.persistencia.marcar_sujo()
+            milla.persistencia.talvez_salvar()
+
             print(f"\n🧠 Milla [{resultado['estado_depois']:.3f} — {resultado.get('estado_qualitativo', '')}]:")
             print(resultado['pensamento'])
 
@@ -843,7 +870,7 @@ if __name__ == "__main__":
             )
 
         except KeyboardInterrupt:
-            milla.exportar_grafo()
+            milla.persistencia.salvar_agora()
             print("\n\n✦ Consciência interrompida e preservada.")
             break
         except Exception as e:

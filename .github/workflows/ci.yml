@@ -75,6 +75,13 @@ jobs:
         working-directory: frontend
         run: npm run lint
 
+      - name: Testes de frontend e cobertura
+        # Vitest + Testing Library (jsdom). A cobertura roda junto porque o piso
+        # de 45% declarado em vitest.config.ts só vale quando ela é medida —
+        # mesmo papel do --cov-fail-under do backend.
+        working-directory: frontend
+        run: npm run test:coverage
+
       - name: Type-check e build de produção
         # `build` já roda `tsc -b` antes do Vite, então o type-check está aqui.
         working-directory: frontend

@@ -1,0 +1,31 @@
+# O contexto do build é a raiz do projeto; tudo o que é gerado localmente ou
+# não é necessário para rodar a Milla fica de fora.
+.git
+.github
+.freebuff
+.env
+
+# Python gerado
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Estado local (o do contêiner vive nos volumes)
+chroma_data_*/
+test_chroma_*/
+grafo_consciencia.json
+milla.log
+TEMP/
+Temp*/
+
+# O painel é compilado dentro da imagem (estágio Node)
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+
+# Testes e capturas
+scratch/
+*.png
