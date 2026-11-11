@@ -1,7 +1,7 @@
 # 🔮 Projeto Milla — Arquitetura Cognitiva e Memória Topológica
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.3.0-8A2BE2?style=for-the-badge" alt="Versão 0.3.0" />
+  <img src="https://img.shields.io/badge/version-0.3.1-8A2BE2?style=for-the-badge" alt="Versão 0.3.1" />
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
@@ -425,6 +425,27 @@ Detalhes que importam:
     o que separa a sua instância do resto da rede.
 *   **Atualização:** `docker compose build --pull` recompila o painel e atualiza
     as dependências; o modelo continua no volume.
+
+#### Imagem publicada (GHCR)
+
+Cada tag `v*` dispara o workflow
+[`docker-image.yml`](./.github/workflows/docker-image.yml), que roda em
+paralelo ao CI e publica a imagem no GitHub Container Registry com as tags
+`<versão>`, `<maior>.<menor>` e `latest`:
+
+```bash
+docker pull ghcr.io/churinti/projeto-milla:0.3.1
+
+docker run -d --name milla -p 8000:8000 \
+  -e MILLA_TOKEN=cole-o-token-aqui \
+  -v milla_dados:/dados \
+  -v milla_chroma:/app/chroma_data_milla \
+  ghcr.io/churinti/projeto-milla:0.3.1
+```
+
+O primeiro push cria o pacote no GHCR; se ele nascer privado, ajuste a
+visibilidade em *Package settings → Change visibility*. Branches não publicam
+imagem: só tags, para que cada versão baixada seja rastreável a um commit.
 *   **Docker travado em “Starting the Docker Engine” (Windows):** é o WSL2, não
     a Milla. Confira `(Get-CimInstance Win32_ComputerSystem).HypervisorPresent`
     (precisa ser `True`; senão, `bcdedit /set hypervisorlaunchtype auto` como
@@ -717,7 +738,7 @@ Tudo fica em [`config.py`](./config.py) — fonte única de verdade, sem arquivo
 
 | Variável | Padrão | Descrição |
 | :--- | :--- | :--- |
-| `VERSAO` | `0.3.0` | Versão do projeto (alimenta a API e o CHANGELOG) |
+| `VERSAO` | `0.3.1` | Versão do projeto (alimenta a API e o CHANGELOG) |
 | `MODELO_PADRAO` | `qwen2.5:7b-instruct-q4_K_M` | Modelo principal do Ollama |
 | `MODELO_ALTERNATIVO` | `llama3:8b` | Fallback quando o principal não responde |
 | `USAR_OLLAMA` | `True` | `False` para usar apenas OpenAI |
@@ -762,8 +783,8 @@ Tudo fica em [`config.py`](./config.py) — fonte única de verdade, sem arquivo
 ## 📦 Versionamento
 
 O projeto usa [Versionamento Semântico](https://semver.org/lang/pt-BR/).
-A versão corrente é **0.3.0**, declarada em `config.VERSAO` (lida pelo
-`api.py`, pelo `frontend/package.json` e pela tag `v0.3.0`).
+A versão corrente é **0.3.1**, declarada em `config.VERSAO` (lida pelo
+`api.py`, pelo `frontend/package.json` e pela tag `v0.3.1`).
 
 O histórico completo fica em [CHANGELOG.md](./CHANGELOG.md).
 

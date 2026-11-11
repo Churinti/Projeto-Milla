@@ -1,0 +1,61 @@
+name: Imagem Docker
+
+# Publica a imagem única da Milla no GitHub Container Registry a cada tag v*.
+# O ci.yml roda em paralelo (testes/lint); este workflow só empacota e publica.
+# Branches não publicam nada — a imagem de um commit sem tag não é reproduzível.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: imagem-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    name: Build e push para o GHCR
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Autenticar no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          # GITHUB_TOKEN basta: `packages: write` está declarado acima e não
+          # existe PAT/secret extra para configurar no repositório.
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadados da imagem
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # O metadata-action normaliza o nome para minúsculas (o GHCR exige);
+          # por isso o repositório pode ter maiúsculas sem quebrar o push.
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Build e push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # A imagem de desenvolvimento é amd64 (o host do projeto é Windows
+          # x64); multi-arch exigiria QEMU e dobraria o tempo de build.
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

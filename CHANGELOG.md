@@ -7,6 +7,21 @@ projeto adota [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 A versão corrente vive em `config.VERSAO` — é dali que o `api.py`, este arquivo
 e a tag do git leem.
 
+## [0.3.1] - 2026-11-11
+
+Primeira versão publicada também como imagem pronta no GitHub Container
+Registry — além do código, cada tag `v*` passa a gerar uma imagem executável.
+
+### Adicionado
+
+- **Publicação da imagem no GHCR a cada tag**
+  (`.github/workflows/docker-image.yml`). O workflow roda em paralelo ao CI,
+  autentica com o `GITHUB_TOKEN` (`packages: write`, sem PAT extra) e usa o
+  `docker/metadata-action` para gerar as tags `<versão>`, `<maior>.<menor>` e
+  `latest` a partir da tag `v*`. Compila só `linux/amd64` com cache do GitHub
+  Actions — multi-arch exigiria QEMU e dobraria o tempo sem uso real no projeto.
+  O README ganhou o `docker pull`/`docker run` da imagem publicada.
+
 ## [0.3.0] - 2026-11-11
 
 Release de operação fora da máquina de desenvolvimento: acesso protegido na
@@ -305,7 +320,8 @@ Versão inicial publicada no GitHub: pipeline cognitivo completo (fusão,
 feedback, micélio, sono, curiosidade e comitê multi-agente), dashboard React
 com grafo d3-force, núcleo 3D e absorção de arquivos e URLs.
 
-[Não lançado]: https://github.com/Churinti/Projeto-Milla/compare/v0.3.0...HEAD
+[Não lançado]: https://github.com/Churinti/Projeto-Milla/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/Churinti/Projeto-Milla/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Churinti/Projeto-Milla/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Churinti/Projeto-Milla/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Churinti/Projeto-Milla/tree/v0.1.0
