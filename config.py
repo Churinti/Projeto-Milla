@@ -8,7 +8,7 @@ import os
 # ─── Versão ────────────────────────────────────────────────────────────────────
 # Fonte única de verdade da versão do projeto. O `api.py` (FastAPI), o
 # CHANGELOG.md e a tag do git apontam para cá; a tag segue o formato v{VERSAO}.
-VERSAO             = "0.2.0"
+VERSAO             = "0.3.0"
 
 # ─── LLM ──────────────────────────────────────────────────────────────────────
 # Melhor modelo disponível localmente para seguir instruções complexas.

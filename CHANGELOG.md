@@ -7,7 +7,11 @@ projeto adota [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 A versão corrente vive em `config.VERSAO` — é dali que o `api.py`, este arquivo
 e a tag do git leem.
 
-## [Não lançado]
+## [0.3.0] - 2026-11-11
+
+Release de operação fora da máquina de desenvolvimento: acesso protegido na
+rede local, estado do grafo preservado entre sessões e uma imagem Docker única
+que dispensa Node e Ollama instalados.
 
 ### Segurança
 
@@ -301,6 +305,7 @@ Versão inicial publicada no GitHub: pipeline cognitivo completo (fusão,
 feedback, micélio, sono, curiosidade e comitê multi-agente), dashboard React
 com grafo d3-force, núcleo 3D e absorção de arquivos e URLs.
 
-[Não lançado]: https://github.com/Churinti/Projeto-Milla/compare/v0.2.0...HEAD
+[Não lançado]: https://github.com/Churinti/Projeto-Milla/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Churinti/Projeto-Milla/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Churinti/Projeto-Milla/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Churinti/Projeto-Milla/tree/v0.1.0

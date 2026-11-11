@@ -1,7 +1,7 @@
 # 🔮 Projeto Milla — Arquitetura Cognitiva e Memória Topológica
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.2.0-8A2BE2?style=for-the-badge" alt="Versão 0.2.0" />
+  <img src="https://img.shields.io/badge/version-0.3.0-8A2BE2?style=for-the-badge" alt="Versão 0.3.0" />
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
@@ -717,7 +717,7 @@ Tudo fica em [`config.py`](./config.py) — fonte única de verdade, sem arquivo
 
 | Variável | Padrão | Descrição |
 | :--- | :--- | :--- |
-| `VERSAO` | `0.2.0` | Versão do projeto (alimenta a API e o CHANGELOG) |
+| `VERSAO` | `0.3.0` | Versão do projeto (alimenta a API e o CHANGELOG) |
 | `MODELO_PADRAO` | `qwen2.5:7b-instruct-q4_K_M` | Modelo principal do Ollama |
 | `MODELO_ALTERNATIVO` | `llama3:8b` | Fallback quando o principal não responde |
 | `USAR_OLLAMA` | `True` | `False` para usar apenas OpenAI |
@@ -762,8 +762,8 @@ Tudo fica em [`config.py`](./config.py) — fonte única de verdade, sem arquivo
 ## 📦 Versionamento
 
 O projeto usa [Versionamento Semântico](https://semver.org/lang/pt-BR/).
-A versão corrente é **0.2.0**, declarada em `config.VERSAO` (lida pelo
-`api.py`, pelo `frontend/package.json` e pela tag `v0.2.0`).
+A versão corrente é **0.3.0**, declarada em `config.VERSAO` (lida pelo
+`api.py`, pelo `frontend/package.json` e pela tag `v0.3.0`).
 
 O histórico completo fica em [CHANGELOG.md](./CHANGELOG.md).
 
